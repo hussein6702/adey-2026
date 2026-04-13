@@ -69,9 +69,9 @@ export default function CorporatePage() {
                         />
                     </Link>
                 </div>
-                <MainHeadings className="corp-heading">Corporate Gifting</MainHeadings>
+                <MainHeadings className="corp-heading">Gifting</MainHeadings>
                 <BodyText className="corp-copy">
-                    Make an impression that lasts. Personalisation and branding options available.
+                    Make an impression that lasts.
                 </BodyText>
                 <div className="corp-links">
                     <Links>
@@ -90,9 +90,9 @@ export default function CorporatePage() {
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
                     <Headings className="why-heading">Why Adey?</Headings>
                     <BodyText className="why-copy text-left lg:text-xl">
-                        We help our corporate clients leave lasting impressions. Whether
+                        Whether
                         you're gifting for clients, executives, or events, we offer
-                        beautiful, customisable chocolate gifts that convey refined taste,
+                        customisable chocolate gifts that convey refined taste,
                         gratitude, and brand warmth.
                         <br /><br />
                         • Handcrafted in Ethiopia<br />
@@ -138,8 +138,10 @@ export default function CorporatePage() {
                         the design and production.
                         <br /><br />
                         <strong>03 — Deliver</strong><br />
-                        We ensure every gift arrives beautifully packaged and on time —
-                        locally or internationally.
+
+                        We ensure every gift is beautifully packaged and delivered on time.
+                        <br />
+                        <span className="text-sm">* Please note, we require a minimum of 2-4 weeks advance notice for bespoke orders</span>
                     </BodyText>
                 </div>
             </section>
@@ -150,9 +152,9 @@ export default function CorporatePage() {
                 className="flex flex-col lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
             >
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
-                    <Headings className="cta-heading">Let's Create Something Special</Headings>
+                    <Headings className="cta-heading">Get in Touch</Headings>
                     <BodyText className="cta-copy text-left lg:text-xl">
-                        Ready to impress? Get in touch to discuss your corporate gifting
+                        Get in touch to discuss your  gifting
                         needs and let us craft a memorable experience for your clients,
                         partners, or team.
                     </BodyText>

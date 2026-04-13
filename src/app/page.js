@@ -16,10 +16,10 @@ export default function Home() {
         }
         textB={
           <>
-            Inspired by the <span className="italic">World</span>
+            Crafted for the <span className="italic">World</span>
           </>
         }
-        subtitle="We believe in slow food, bold ideas, and local excellence. Our goal is to contribute to Ethiopian craftsmanship on the global stage — with chocolate."
+        subtitle="Handcrafted in Addis Ababa, our creations blend refined European techniques with ingredients from across our rich continent. Each piece is a celebration of heritage, artistry, and the promise of tomorrow."
         dark
       />
 

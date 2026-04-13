@@ -49,7 +49,6 @@ export default function LandingSection({ className = "" }) {
         </Link>
       </div>
       <BodyText className="landing-copy">
-        Rooted In Africa. Inspired by the World.
       </BodyText>
       <div className="landing-links">
         <Links>
@@ -66,11 +65,10 @@ export default function LandingSection({ className = "" }) {
               Shop
             </Link>
           </p>
-          <p>|</p>
+          <p></p>
           <p>
             <Link
               href="/about">
-              Bonbons
             </Link>
           </p>
         </Links>

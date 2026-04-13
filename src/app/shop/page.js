@@ -234,10 +234,10 @@ export default function ShopPage() {
         const dbCats = catRes.data || [];
         const currentBonbonCats = bonbonRes.data?.map(b => b.category) || [];
         const uniqueActiveCats = Array.from(new Set(currentBonbonCats)).filter(Boolean);
-        
+
         // Merge defaults with active categories, keeping order
         const mergedNames = Array.from(new Set([...DEFAULT_CATEGORY_ORDER, ...uniqueActiveCats])).filter(name => uniqueActiveCats.includes(name));
-        
+
         const finalCategories = mergedNames.map(name => {
             const dbCat = dbCats.find(c => c.name === name);
             return {
@@ -429,7 +429,7 @@ export default function ShopPage() {
                     <p className="shop-hero-tag">Chocolatier Adey</p>
                     <h1 className="shop-hero-title">The Bonbon Collection</h1>
                     <p className="shop-hero-sub">
-                        Handcrafted. Rooted in Africa. One bonbon at a time.
+                        Handcrafted, one bonbon at a time.
                     </p>
                 </div>
             </header>

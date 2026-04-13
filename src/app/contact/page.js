@@ -166,7 +166,7 @@ export default function ContactPage() {
 
                 {/* Contact details on the right */}
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-10 gap-8 lg:min-w-1/2 lg:p-20 p-10">
-                    <Headings>Our Details</Headings>
+                    <Headings>Contact Information</Headings>
                     <div className="flex flex-col gap-5">
                         <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
                             <MapPinIcon />
@@ -174,7 +174,7 @@ export default function ContactPage() {
                         </div>
                         <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
                             <ClockIcon />
-                            <span>Tuesday – Sunday, 10 am – 6 pm</span>
+                            <span>Monday – Saturday, 10 am – 6 pm, Sundays, 12:30 pm – 4:30 pm</span>
                         </div>
                         <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
                             <PhoneIcon />
@@ -182,7 +182,7 @@ export default function ContactPage() {
                         </div>
                         <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
                             <MailIcon />
-                            <a href="mailto:hello@chocolatieradey.com" className="hover:text-stone-800 transition-colors">hello@chocolatieradey.com</a>
+                            <a href="mailto:hello@chocolatieradey.com" className="hover:text-stone-800 transition-colors">hello@adeychocolatier.com</a>
                         </div>
                     </div>
                 </div>
@@ -203,7 +203,7 @@ export default function ContactPage() {
                     />
                 </div>
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
-                    <Headings className="visit-heading">Visit Our Tasting Gallery</Headings>
+                    <Headings className="visit-heading">Visit us and Experience Chocolate as Art</Headings>
                     <BodyText className="visit-copy text-left lg:text-xl">
                         Our tasting gallery is more than a shop — it's a space to explore,
                         sample, and experience chocolate as art. Whether you're a

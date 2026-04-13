@@ -9,7 +9,7 @@ import Links from "../../UI/Links";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function VerticalSection(){
+export default function VerticalSection() {
     const ref = useRef(null);
 
     useEffect(() => {
@@ -32,11 +32,11 @@ export default function VerticalSection(){
         return () => ctx.revert();
     }, []);
 
-    return(
-<section 
-  ref={ref} 
-  className="flex flex-col lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
->            <div className="w-full  lg:h-full lg:w-1/2  flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
+    return (
+        <section
+            ref={ref}
+            className="flex flex-col lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
+        >            <div className="w-full  lg:h-full lg:w-1/2  flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
                 <Headings className="vertical-heading">
                     Handcrafted Excellence.
                 </Headings>
@@ -50,7 +50,7 @@ export default function VerticalSection(){
                         </p>
                         <p>|</p>
                         <p>
-                            <Link href="/login">Bonbons</Link>
+                            <Link href="/about">About</Link>
                         </p>
                     </Links>
                 </div>

@@ -88,7 +88,8 @@ export default function AboutPage() {
                 className="flex flex-col lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
             >
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
-                    <Headings className="story-heading">Born From a Dream</Headings>
+                    <Headings className="story-heading">Rooted in Ethiopia, <br />
+                        Inspired by the world.</Headings>
                     <BodyText className="story-copy text-left lg:text-xl">
                         Chocolatier Adey was born from a simple desire to convey Ethiopia's
                         rich history of craftsmanship and culinary heritage through the
@@ -123,11 +124,11 @@ export default function AboutPage() {
             >
                 <div className="name-image w-full h-1/2 lg:h-full lg:w-1/2 lg:min-w-1/2 lg:flex p-10 lg:items-center lg:justify-center">
                     <Image
-                        src="/High Res 1.webp"
+                        src="/flowers.jpg"
                         alt="Chocolatier Adey bonbons"
                         width={1080}
                         height={1920}
-                        className="w-70 lg:w-150 h-auto mb transition"
+                        className="w-70 lg:w-120 lg:mt-20 h-auto mb transition"
                     />
                 </div>
                 <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">

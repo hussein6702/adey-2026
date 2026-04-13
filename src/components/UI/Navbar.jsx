@@ -102,7 +102,7 @@ export default function Navbar() {
                                 { href: '/', label: 'Home' },
                                 { href: '/shop', label: 'Shop' },
                                 { href: '/about', label: 'About' },
-                                { href: '/corporate', label: 'Corporate' },
+                                { href: '/corporate', label: 'Gifting' },
                                 { href: '/contact', label: 'Contact' },
                             ].map(({ href, label }) => (
                                 <Link
