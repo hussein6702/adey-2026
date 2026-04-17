@@ -180,9 +180,16 @@ export default function ContactPage() {
                             <PhoneIcon />
                             <a href="tel:+251987863536" className="hover:text-stone-800 transition-colors">+251 987 863 536</a>
                         </div>
-                        <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
-                            <MailIcon />
-                            <a href="mailto:hello@chocolatieradey.com" className="hover:text-stone-800 transition-colors">hello@adeychocolatier.com</a>
+                        <div className="flex flex-col gap-5">
+                            <div className="flex items-start gap-4 font-calson text-lg text-stone-600">
+                                <MailIcon />
+                                <div className="flex flex-col gap-1">
+                                    <a href="mailto:hello@adeychocolatier.com" className="hover:text-stone-800 transition-colors">hello@adeychocolatier.com</a>
+                                    <a href="mailto:corporate@adeychocolatier.com" className="hover:text-stone-800 transition-colors text-sm text-stone-400">corporate@adeychocolatier.com</a>
+                                    <a href="mailto:admin@adeychocolatier.com" className="hover:text-stone-800 transition-colors text-sm text-stone-400">admin@adeychocolatier.com</a>
+                                    <a href="mailto:shop@adeychocolatier.com" className="hover:text-stone-800 transition-colors text-sm text-stone-400">shop@adeychocolatier.com</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

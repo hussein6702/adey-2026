@@ -59,7 +59,7 @@ We offer custom branding options upon request.
                 <div className="corporate-links">
                     <Links>
                         <p>
-                            <Link className="underline" href="/about">Book a meeting</Link>
+                            <Link className="underline" href="/corporate">Learn More</Link>
                         </p>
                     </Links>
                 </div>

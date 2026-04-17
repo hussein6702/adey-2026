@@ -55,20 +55,14 @@ export default function LandingSection({ className = "" }) {
           <p>
             <Link
               href="/about">
-              Learn More
+              Our Story
             </Link>
           </p>
           <p>|</p>
           <p>
             <Link
-              href="/about">
+              href="/shop">
               Shop
-            </Link>
-          </p>
-          <p></p>
-          <p>
-            <Link
-              href="/about">
             </Link>
           </p>
         </Links>
