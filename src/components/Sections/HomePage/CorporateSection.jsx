@@ -8,7 +8,7 @@ import Links from "../../UI/Links";
 import Link from "next/link";
 import Image from "next/image";
 
-export default function CorporateSection(){
+export default function CorporateSection() {
     const ref = useRef(null);
 
     useEffect(() => {
@@ -32,11 +32,11 @@ export default function CorporateSection(){
         return () => ctx.revert();
     }, []);
 
-    return(
-<section 
-  ref={ref} 
-  className="flex flex-col-reverse lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
->            <div className="corporate-image w-full h-1/2 lg:h-full lg:w-1/2  lg:min-w-1/2 lg:flex p-10 lg:items-center lg:justify-center">
+    return (
+        <section
+            ref={ref}
+            className="flex flex-col-reverse lg:flex-row h-auto w-full lg:w-[80vw] lg:justify-center lg:items-center mx-auto overflow-hidden"
+        >            <div className="corporate-image w-full h-1/2 lg:h-full lg:w-1/2  lg:min-w-1/2 lg:flex p-10 lg:items-center lg:justify-center">
                 <Image
                     src="/High2.webp"
                     alt="Chocolatier Adey image"
@@ -48,13 +48,13 @@ export default function CorporateSection(){
             </div>
             <div className="w-full lg:h-full lg:w-1/2 flex flex-col lg:gap-20 gap-10 lg:min-w-1/2 lg:p-20 p-10">
                 <Headings className="corporate-heading">
-                        Corporate Gifting
+                    Corporate Gifting
                 </Headings>
                 <BodyText className="corporate-copy text-left lg:text-xl">
-                   Whether you’re thanking a client or celebrating a milestone, our curated chocolate gifts speak volumes.<br/><br/>
+                    Whether you’re thanking a client or celebrating a milestone, our curated chocolate gifts speak volumes.<br /><br />
 
- Whether you’re gifting for clients, executives, or events, we offer beautiful, customisable chocolate gifts that convey refined taste, gratitude, and brand warmth.
-We offer custom branding options upon request. 
+                    Whether you’re gifting for clients, executives, or events, we offer beautiful, customisable chocolate gifts that convey refined taste, gratitude, and brand warmth.
+                    We offer custom branding options upon request.
                 </BodyText>
                 <div className="corporate-links">
                     <Links>

@@ -165,14 +165,7 @@ function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderF
                 </div>
             </div>
 
-            <select
-                value={orderForm.pickUpType}
-                onChange={e => setOrderForm(prev => ({ ...prev, pickUpType: e.target.value }))}
-                className="shop-input"
-            >
-                <option value="pickup">Pick Up</option>
-                <option value="delivery">Delivery</option>
-            </select>
+
             {orderError && <p className="shop-error">{orderError}</p>}
             <button type="submit" className="shop-btn-primary" disabled={disabled || submitting}>
                 {submitting ? 'Placing Order...' : submitLabel}
@@ -641,6 +634,8 @@ export default function ShopPage() {
             </aside>
 
             {renderSuccessOverlay()}
+            <div></div>
         </div>
     );
+    // Commit Test
 }
