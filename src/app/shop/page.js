@@ -20,8 +20,8 @@ const BOX_SIZES = [
     { key: '40-piece', label: '40 Piece', pieces: 40 },
 ];
 
-// --- Bonbon card --- DEFINED OUTSIDE to maintain stable component identity
-function BonbonCard({ bonbon, inCart, outOfStock, lowStock, atStockLimit, totalPieces, maxPieces, onAdd, onRemove }) {
+// --- Bonbon card ---
+function BonbonCard({ bonbon, inCart, outOfStock, lowStock, atStockLimit, totalPieces, maxPieces, onAdd, onRemove, hidePrice }) {
     return (
         <div className={`bonbon-card ${outOfStock ? 'out-of-stock' : ''}`} style={outOfStock ? { opacity: 0.5 } : {}}>
             <div className="bonbon-image-wrap">
@@ -46,7 +46,7 @@ function BonbonCard({ bonbon, inCart, outOfStock, lowStock, atStockLimit, totalP
                 <h3 className="bonbon-name">{bonbon.name}</h3>
                 <p className="bonbon-desc">{bonbon.description}</p>
                 <div className="bonbon-meta">
-                    <span className="bonbon-price">{bonbon.price} ETB</span>
+                    {!hidePrice && <span className="bonbon-price">{bonbon.price} ETB</span>}
                     {bonbon.allergens && bonbon.allergens.length > 0 && (
                         <div className="bonbon-allergens">
                             {bonbon.allergens.map(a => (
@@ -101,7 +101,7 @@ const COUNTRY_CODES = [
     { code: '+86', flag: '🇨🇳', name: 'China' },
 ];
 
-// --- Order Form fields --- DEFINED OUTSIDE to maintain stable component identity
+// --- Order Form fields ---
 function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderForm, submitting, orderError }) {
     return (
         <form onSubmit={onSubmit} className="shop-order-form">
@@ -121,8 +121,6 @@ function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderF
                 onChange={e => setOrderForm(prev => ({ ...prev, userEmail: e.target.value }))}
                 className="shop-input"
             />
-
-            {/* Phone with country code */}
             <div className="shop-phone-row">
                 <select
                     value={orderForm.countryCode}
@@ -144,7 +142,6 @@ function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderF
                     className="shop-input"
                 />
             </div>
-
             <div className="shop-contact-toggle">
                 <p className="shop-toggle-label">Preferred Contact:</p>
                 <div className="shop-toggle-options">
@@ -164,13 +161,68 @@ function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderF
                     </button>
                 </div>
             </div>
-
-
             {orderError && <p className="shop-error">{orderError}</p>}
             <button type="submit" className="shop-btn-primary" disabled={disabled || submitting}>
                 {submitting ? 'Placing Order...' : submitLabel}
             </button>
         </form>
+    );
+}
+
+// --- Box Choice Modal ---
+function BoxChoiceModal({ boxPrices, onChoose }) {
+    const [step, setStep] = useState('ask');
+    const [selectedSize, setSelectedSize] = useState(null);
+
+    return (
+        <div className="box-choice-overlay">
+            <div className="box-choice-modal">
+                {step === 'ask' && (
+                    <>
+                        <div className="box-choice-icon">🎁</div>
+                        <h2 className="box-choice-title">Would you like a box?</h2>
+                        <p className="box-choice-desc">
+                            Our bonbons come beautifully packaged. Choose a box size, or pick your bonbons individually.
+                        </p>
+                        <div className="box-choice-actions">
+                            <button className="box-choice-btn box-choice-yes" onClick={() => setStep('pickSize')}>
+                                Yes, I&apos;d like a box
+                            </button>
+                            <button className="box-choice-btn box-choice-no" onClick={() => onChoose(false, null)}>
+                                No thanks, just bonbons
+                            </button>
+                        </div>
+                    </>
+                )}
+                {step === 'pickSize' && (
+                    <>
+                        <h2 className="box-choice-title">Choose your box size</h2>
+                        <p className="box-choice-desc">Select how many pieces you&apos;d like in your box.</p>
+                        <div className="box-choice-sizes">
+                            {BOX_SIZES.map(({ key, label, pieces }) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setSelectedSize(key)}
+                                    className={`box-size-option ${selectedSize === key ? 'selected' : ''}`}
+                                >
+                                    <span className="box-size-num">{pieces}</span>
+                                    <span className="box-size-label">{label}</span>
+                                    <span className="box-size-price">{boxPrices[key] || '—'} ETB</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="box-choice-actions">
+                            <button className="box-choice-btn box-choice-yes" disabled={!selectedSize} onClick={() => onChoose(true, selectedSize)}>
+                                Continue
+                            </button>
+                            <button className="box-choice-btn box-choice-back" onClick={() => setStep('ask')}>
+                                ← Go Back
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
     );
 }
 
@@ -182,11 +234,18 @@ export default function ShopPage() {
     const [boxPrices, setBoxPrices] = useState({});
     const [loading, setLoading] = useState(true);
 
-    // Cart state
+    // Box choice state
+    const [wantsBox, setWantsBox] = useState(null);
+    const [selectedBoxSize, setSelectedBoxSize] = useState(null);
+
+    // Custom bonbon cart
     const [cart, setCart] = useState({});
     const [cartOpen, setCartOpen] = useState(false);
 
-    // Best Sellers state
+    // Best Seller cart: array of { boxSize, qty }
+    const [bestSellerCart, setBestSellerCart] = useState([]);
+
+    // Best Seller UI state
     const [bestSellerSize, setBestSellerSize] = useState(null);
     const [bestSellerQty, setBestSellerQty] = useState(1);
 
@@ -227,24 +286,16 @@ export default function ShopPage() {
         const dbCats = catRes.data || [];
         const currentBonbonCats = bonbonRes.data?.map(b => b.category) || [];
         const uniqueActiveCats = Array.from(new Set(currentBonbonCats)).filter(Boolean);
-
-        // Merge defaults with active categories, keeping order
         const mergedNames = Array.from(new Set([...DEFAULT_CATEGORY_ORDER, ...uniqueActiveCats])).filter(name => uniqueActiveCats.includes(name));
 
         const finalCategories = mergedNames.map(name => {
             const dbCat = dbCats.find(c => c.name === name);
-            return {
-                name,
-                image_url: dbCat?.image_url || null
-            };
+            return { name, image_url: dbCat?.image_url || null };
         });
-
         setCategories(finalCategories);
 
         const newLabels = { ...DEFAULT_CATEGORY_LABELS };
-        mergedNames.forEach(c => {
-            if (!newLabels[c]) newLabels[c] = c;
-        });
+        mergedNames.forEach(c => { if (!newLabels[c]) newLabels[c] = c; });
         setCategoryLabels(newLabels);
 
         if (priceRes.data) {
@@ -252,22 +303,24 @@ export default function ShopPage() {
             priceRes.data.forEach(r => { p[r.box_size] = r.price; });
             setBoxPrices(p);
         }
-
         setLoading(false);
     }, []);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    // --- Cart Logic ---
+    // --- Derive max pieces from box choice ---
+    const boxSizeObj = BOX_SIZES.find(b => b.key === selectedBoxSize);
+    const MAX_PIECES = wantsBox && boxSizeObj ? boxSizeObj.pieces : 40;
+
+    // --- Custom Cart Logic ---
     const totalPieces = Object.values(cart).reduce((s, v) => s + v, 0);
-    const MAX_PIECES = 40;
 
     function addToCart(bonbonId) {
         if (totalPieces >= MAX_PIECES) return;
         const bonbon = bonbons.find(b => b.id === bonbonId);
         if (bonbon && bonbon.stock !== null && bonbon.stock !== undefined) {
             const inCart = cart[bonbonId] || 0;
-            if (inCart >= bonbon.stock) return; // Can't exceed stock
+            if (inCart >= bonbon.stock) return;
         }
         setCart(prev => ({ ...prev, [bonbonId]: (prev[bonbonId] || 0) + 1 }));
     }
@@ -283,8 +336,38 @@ export default function ShopPage() {
 
     function clearCart() { setCart({}); }
 
-    // Calculate cart total using individual bonbon prices (free choice)
-    function calculateCartTotal() {
+    // --- Best Seller Cart Logic ---
+    function addBestSellerToCart() {
+        if (!bestSellerSize || bestSellerQty < 1) return;
+        setBestSellerCart(prev => {
+            const existing = prev.find(i => i.boxSize === bestSellerSize);
+            if (existing) {
+                return prev.map(i => i.boxSize === bestSellerSize ? { ...i, qty: i.qty + bestSellerQty } : i);
+            }
+            return [...prev, { boxSize: bestSellerSize, qty: bestSellerQty }];
+        });
+        setBestSellerSize(null);
+        setBestSellerQty(1);
+        setCartOpen(true);
+    }
+
+    function removeBestSellerItem(boxSize) {
+        setBestSellerCart(prev => prev.filter(i => i.boxSize !== boxSize));
+    }
+
+    function updateBestSellerQty(boxSize, delta) {
+        setBestSellerCart(prev => prev.map(i => {
+            if (i.boxSize !== boxSize) return i;
+            const newQty = i.qty + delta;
+            return newQty > 0 ? { ...i, qty: newQty } : i;
+        }).filter(i => i.qty > 0));
+    }
+
+    // --- Totals ---
+    function calculateCustomTotal() {
+        if (wantsBox && selectedBoxSize && boxPrices[selectedBoxSize]) {
+            return totalPieces > 0 ? boxPrices[selectedBoxSize] : 0;
+        }
         let total = 0;
         for (const [bonbonId, qty] of Object.entries(cart)) {
             const b = bonbons.find(x => x.id === bonbonId);
@@ -293,10 +376,38 @@ export default function ShopPage() {
         return total;
     }
 
-    // --- Order Submission ---
-    async function submitCustomOrder(e) {
+    function calculateBestSellerTotal() {
+        return bestSellerCart.reduce((sum, item) => sum + (boxPrices[item.boxSize] || 0) * item.qty, 0);
+    }
+
+    const customTotal = calculateCustomTotal();
+    const bestSellerTotal = calculateBestSellerTotal();
+    const grandTotal = customTotal + bestSellerTotal;
+
+    const hasCustomItems = totalPieces > 0;
+    const hasBestSellerItems = bestSellerCart.length > 0;
+    const hasAnyItems = hasCustomItems || hasBestSellerItems;
+
+    const totalCartCount = totalPieces + bestSellerCart.reduce((s, i) => {
+        const bs = BOX_SIZES.find(b => b.key === i.boxSize);
+        return s + (bs ? bs.pieces * i.qty : 0);
+    }, 0);
+
+    function handleBoxChoice(wants, size) {
+        setWantsBox(wants);
+        setSelectedBoxSize(size);
+        setCart({});
+    }
+
+    function clearAll() {
+        clearCart();
+        setBestSellerCart([]);
+    }
+
+    // --- Unified Order Submission ---
+    async function submitOrder(e) {
         e.preventDefault();
-        if (totalPieces === 0) return;
+        if (!hasAnyItems) return;
 
         setSubmitting(true);
         setOrderError(null);
@@ -313,8 +424,12 @@ export default function ShopPage() {
             body: JSON.stringify({
                 ...orderForm,
                 phoneNumber: fullPhone,
-                orderType: 'custom',
-                items,
+                orderType: hasBestSellerItems && !hasCustomItems ? 'bestSeller' : hasCustomItems && !hasBestSellerItems ? 'custom' : 'mixed',
+                items: items.length > 0 ? items : undefined,
+                bestSellerItems: bestSellerCart.length > 0 ? bestSellerCart : undefined,
+                wantsBox: wantsBox || false,
+                selectedBoxSize: selectedBoxSize || null,
+                orderSource: 'online',
             }),
         });
 
@@ -323,58 +438,25 @@ export default function ShopPage() {
         if (data.success) {
             setSuccessItems(items);
             setOrderSuccess(data.order);
-            clearCart();
+            clearAll();
             setCartOpen(false);
             setOrderForm({ customerName: '', userEmail: '', phoneNumber: '', countryCode: '+251', pickUpType: 'pickup', preferredContact: 'whatsapp' });
-            fetchData(); // Refresh stock
+            fetchData();
         } else {
             setOrderError(data.error);
         }
     }
 
-    async function submitBestSellerOrder(e) {
-        e.preventDefault();
-        if (!bestSellerSize) return;
-
-        setSubmitting(true);
-        setOrderError(null);
-
-        const fullPhone = `${orderForm.countryCode}${orderForm.phoneNumber.replace(/^0/, '')}`;
-        const res = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...orderForm,
-                phoneNumber: fullPhone,
-                orderType: 'bestSeller',
-                boxSize: bestSellerSize,
-                quantity: bestSellerQty,
-            }),
-        });
-
-        const data = await res.json();
-        setSubmitting(false);
-        if (data.success) {
-            setSuccessItems([]);
-            setOrderSuccess(data.order);
-            setBestSellerSize(null);
-            setBestSellerQty(1);
-            setOrderForm({ customerName: '', userEmail: '', phoneNumber: '', countryCode: '+251', pickUpType: 'pickup', preferredContact: 'whatsapp' });
-        } else {
-            setOrderError(data.error);
-        }
-    }
-
-    // Success overlay with bonbon images
+    // Success overlay
     function renderSuccessOverlay() {
         if (!orderSuccess) return null;
         return (
-            <div className="shop-success-overlay" onClick={() => setOrderSuccess(null)}>
+            <div className="shop-success-overlay" onClick={() => { setOrderSuccess(null); setWantsBox(null); setSelectedBoxSize(null); }}>
                 <div className="shop-success-card" onClick={e => e.stopPropagation()}>
                     <div className="shop-success-icon">✓</div>
                     <h3>Order Placed!</h3>
                     <p>Your order has been received. We&apos;ll get in touch shortly.</p>
-                    {successItems.length > 0 ? (
+                    {successItems.length > 0 && (
                         <div className="shop-success-items">
                             {successItems.map((item, i) => (
                                 <div key={i} className="success-item">
@@ -383,16 +465,9 @@ export default function ShopPage() {
                                 </div>
                             ))}
                         </div>
-                    ) : orderSuccess.orderType === 'bestSeller' && (
-                        <div className="shop-success-best-seller mb-4 pb-2 border-b border-zinc-100 flex flex-col items-center">
-                            <span className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] mb-1">Assortment</span>
-                            <p className="text-zinc-800 font-black uppercase tracking-widest text-xs">
-                                {orderSuccess.boxes[Object.keys(orderSuccess.boxes).find(k => orderSuccess.boxes[k] > 0)]}× {Object.keys(orderSuccess.boxes).find(k => orderSuccess.boxes[k] > 0).replace('-piece', ' Piece')} Box
-                            </p>
-                        </div>
                     )}
                     <p className="shop-success-amount">{orderSuccess.amount} ETB</p>
-                    <button onClick={() => setOrderSuccess(null)} className="shop-btn-primary">Continue Shopping</button>
+                    <button onClick={() => { setOrderSuccess(null); setWantsBox(null); setSelectedBoxSize(null); }} className="shop-btn-primary">Continue Shopping</button>
                 </div>
             </div>
         );
@@ -407,12 +482,26 @@ export default function ShopPage() {
         );
     }
 
+    // Show box choice modal if not yet chosen
+    if (wantsBox === null) {
+        return (
+            <div className="shop-page">
+                <header className="shop-hero">
+                    <div className="shop-hero-content">
+                        <p className="shop-hero-tag">Chocolatier Adey</p>
+                        <h1 className="shop-hero-title">The Bonbon Collection</h1>
+                        <p className="shop-hero-sub">Handcrafted, one bonbon at a time.</p>
+                    </div>
+                </header>
+                <BoxChoiceModal boxPrices={boxPrices} onChoose={handleBoxChoice} />
+            </div>
+        );
+    }
+
     const cartBonbons = Object.entries(cart).map(([id, qty]) => ({
         bonbon: bonbons.find(b => b.id === id),
         qty,
     })).filter(x => x.bonbon);
-
-    const cartTotal = calculateCartTotal();
 
     return (
         <div className="shop-page">
@@ -421,11 +510,20 @@ export default function ShopPage() {
                 <div className="shop-hero-content">
                     <p className="shop-hero-tag">Chocolatier Adey</p>
                     <h1 className="shop-hero-title">The Bonbon Collection</h1>
-                    <p className="shop-hero-sub">
-                        Handcrafted, one bonbon at a time.
-                    </p>
+                    <p className="shop-hero-sub">Handcrafted, one bonbon at a time.</p>
                 </div>
             </header>
+
+            {/* Box choice indicator */}
+            <div className="shop-box-indicator">
+                <span>
+                    {wantsBox
+                        ? `📦 ${boxSizeObj?.label} Box — ${boxPrices[selectedBoxSize] || '—'} ETB`
+                        : '🍫 Individual Bonbons (No Box)'
+                    }
+                </span>
+                <button onClick={() => { setWantsBox(null); setSelectedBoxSize(null); clearAll(); }} className="shop-box-change">Change</button>
+            </div>
 
             {/* Cart FAB */}
             <button className="shop-cart-fab" onClick={() => setCartOpen(true)}>
@@ -433,7 +531,7 @@ export default function ShopPage() {
                     <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                 </svg>
-                {totalPieces > 0 && <span className="shop-cart-count">{totalPieces}</span>}
+                {totalCartCount > 0 && <span className="shop-cart-count">{totalCartCount}</span>}
             </button>
 
             {/* Category Tabs */}
@@ -441,9 +539,7 @@ export default function ShopPage() {
                 <button
                     onClick={() => setActiveCategory('all')}
                     className={`shop-cat-tab ${activeCategory === 'all' ? 'active' : ''}`}
-                >
-                    All
-                </button>
+                >All</button>
                 {categories.map(catObj => (
                     grouped[catObj.name] && grouped[catObj.name].length > 0 && (
                         <button
@@ -458,25 +554,23 @@ export default function ShopPage() {
                 <button
                     onClick={() => setActiveCategory('bestSellers')}
                     className={`shop-cat-tab best-sellers ${activeCategory === 'bestSellers' ? 'active' : ''}`}
-                >
-                    ★ Best Sellers Box
-                </button>
+                >★ Best Sellers Box</button>
             </nav>
 
             {/* Piece limit banner */}
-            {totalPieces > 0 && (
+            {totalPieces > 0 && activeCategory !== 'bestSellers' && (
                 <div className="shop-limit-banner">
                     <span>{totalPieces}/{MAX_PIECES} pieces selected</span>
                     {totalPieces >= MAX_PIECES && <span className="shop-limit-full">Cart Full</span>}
                 </div>
             )}
 
-            {/* BEST SELLERS Section */}
+            {/* BEST SELLERS Section — now adds to cart */}
             {activeCategory === 'bestSellers' && (
                 <section className="shop-best-sellers">
                     <div className="shop-section-header">
                         <h2>Best Sellers Box</h2>
-                        <p>Let us pick the perfect assortment for you. Just choose your box size.</p>
+                        <p>Let us pick the perfect assortment for you. Choose a box size and add it to your cart.</p>
                     </div>
                     <div className="best-seller-boxes">
                         {BOX_SIZES.map(({ key, label, pieces }) => (
@@ -504,15 +598,26 @@ export default function ShopPage() {
                             <p className="bs-total">
                                 Total: <strong>{(boxPrices[bestSellerSize] || 0) * bestSellerQty} ETB</strong>
                             </p>
-                            <OrderFormFields
-                                onSubmit={submitBestSellerOrder}
-                                submitLabel={`Order ${bestSellerQty}× ${bestSellerSize}`}
-                                disabled={!bestSellerSize}
-                                orderForm={orderForm}
-                                setOrderForm={setOrderForm}
-                                submitting={submitting}
-                                orderError={orderError}
-                            />
+                            <button
+                                onClick={addBestSellerToCart}
+                                className="shop-btn-primary"
+                                style={{ marginTop: '0.5rem' }}
+                            >
+                                Add to Cart — {bestSellerQty}× {bestSellerSize.replace('-piece', ' Piece')}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Show current best seller items in cart */}
+                    {bestSellerCart.length > 0 && (
+                        <div className="bs-cart-preview">
+                            <p className="bs-cart-preview-title">Best Sellers in Cart:</p>
+                            {bestSellerCart.map(item => (
+                                <div key={item.boxSize} className="bs-cart-preview-item">
+                                    <span>{item.qty}× {item.boxSize.replace('-piece', ' Piece')} Box</span>
+                                    <span>{(boxPrices[item.boxSize] || 0) * item.qty} ETB</span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </section>
@@ -554,6 +659,7 @@ export default function ShopPage() {
                                                 maxPieces={MAX_PIECES}
                                                 onAdd={addToCart}
                                                 onRemove={removeFromCart}
+                                                hidePrice={wantsBox}
                                             />
                                         );
                                     })}
@@ -572,7 +678,7 @@ export default function ShopPage() {
                     <button onClick={() => setCartOpen(false)} className="shop-cart-close">✕</button>
                 </div>
 
-                {cartBonbons.length === 0 ? (
+                {!hasAnyItems ? (
                     <div className="shop-cart-empty">
                         <p>Your cart is empty</p>
                         <p className="shop-cart-empty-sub">Add some bonbons to get started</p>
@@ -580,47 +686,103 @@ export default function ShopPage() {
                 ) : (
                     <>
                         <div className="shop-cart-items">
-                            {cartBonbons.map(({ bonbon, qty }) => (
-                                <div key={bonbon.id} className="shop-cart-item">
-                                    {bonbon.image_url && (
-                                        <img src={bonbon.image_url} alt={bonbon.name} className="shop-cart-item-img" />
-                                    )}
-                                    <div className="shop-cart-item-info">
-                                        <p className="shop-cart-item-name">{bonbon.name}</p>
-                                        <p className="shop-cart-item-cat">{bonbon.price} ETB × {qty}</p>
+                            {/* Custom bonbon items */}
+                            {hasCustomItems && (
+                                <>
+                                    <div className="shop-cart-section-label">
+                                        {wantsBox ? `📦 ${boxSizeObj?.label} Box` : '🍫 Individual Bonbons'}
                                     </div>
-                                    <div className="bonbon-qty-control small">
-                                        <button onClick={() => removeFromCart(bonbon.id)} className="qty-btn">−</button>
-                                        <span className="qty-value">{qty}</span>
-                                        <button onClick={() => addToCart(bonbon.id)} className="qty-btn" disabled={totalPieces >= MAX_PIECES}>+</button>
+                                    {cartBonbons.map(({ bonbon, qty }) => (
+                                        <div key={bonbon.id} className="shop-cart-item">
+                                            {bonbon.image_url && (
+                                                <img src={bonbon.image_url} alt={bonbon.name} className="shop-cart-item-img" />
+                                            )}
+                                            <div className="shop-cart-item-info">
+                                                <p className="shop-cart-item-name">{bonbon.name}</p>
+                                                {!wantsBox && (
+                                                    <p className="shop-cart-item-cat">{bonbon.price} ETB × {qty}</p>
+                                                )}
+                                                {wantsBox && (
+                                                    <p className="shop-cart-item-cat">×{qty}</p>
+                                                )}
+                                            </div>
+                                            <div className="bonbon-qty-control small">
+                                                <button onClick={() => removeFromCart(bonbon.id)} className="qty-btn">−</button>
+                                                <span className="qty-value">{qty}</span>
+                                                <button onClick={() => addToCart(bonbon.id)} className="qty-btn" disabled={totalPieces >= MAX_PIECES}>+</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            {/* Best Seller items */}
+                            {hasBestSellerItems && (
+                                <>
+                                    <div className="shop-cart-section-label" style={hasCustomItems ? { marginTop: '1rem' } : {}}>
+                                        ★ Best Sellers
                                     </div>
-                                </div>
-                            ))}
+                                    {bestSellerCart.map(item => {
+                                        const bsObj = BOX_SIZES.find(b => b.key === item.boxSize);
+                                        return (
+                                            <div key={item.boxSize} className="shop-cart-item">
+                                                <div className="shop-cart-bs-icon">★</div>
+                                                <div className="shop-cart-item-info">
+                                                    <p className="shop-cart-item-name">{bsObj?.label || item.boxSize} Box</p>
+                                                    <p className="shop-cart-item-cat">{boxPrices[item.boxSize] || '—'} ETB × {item.qty}</p>
+                                                </div>
+                                                <div className="bonbon-qty-control small">
+                                                    <button onClick={() => updateBestSellerQty(item.boxSize, -1)} className="qty-btn">−</button>
+                                                    <span className="qty-value">{item.qty}</span>
+                                                    <button onClick={() => updateBestSellerQty(item.boxSize, 1)} className="qty-btn">+</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </>
+                            )}
                         </div>
 
                         {/* Cart Summary */}
                         <div className="shop-cart-breakdown">
                             <h4>Order Summary</h4>
                             <div className="breakdown-list">
-                                {cartBonbons.map(({ bonbon, qty }) => (
+                                {/* Custom section */}
+                                {hasCustomItems && wantsBox && (
+                                    <div className="breakdown-row">
+                                        <span>📦 {boxSizeObj?.label} Box ({totalPieces} pcs)</span>
+                                        <span>{customTotal} ETB</span>
+                                    </div>
+                                )}
+                                {hasCustomItems && !wantsBox && cartBonbons.map(({ bonbon, qty }) => (
                                     <div key={bonbon.id} className="breakdown-row">
                                         <span>{qty}× {bonbon.name}</span>
                                         <span>{bonbon.price * qty} ETB</span>
                                     </div>
                                 ))}
+                                {/* Best seller section */}
+                                {bestSellerCart.map(item => {
+                                    const bsObj = BOX_SIZES.find(b => b.key === item.boxSize);
+                                    return (
+                                        <div key={item.boxSize} className="breakdown-row">
+                                            <span>★ {item.qty}× {bsObj?.label} Box</span>
+                                            <span>{(boxPrices[item.boxSize] || 0) * item.qty} ETB</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                             <div className="breakdown-total">
                                 <span>Total</span>
-                                <span>{cartTotal} ETB</span>
+                                <span>{grandTotal} ETB</span>
                             </div>
                         </div>
 
                         {/* Order Form */}
                         <div className="shop-cart-form-area">
                             <OrderFormFields
-                                onSubmit={submitCustomOrder}
-                                submitLabel={`Place Order — ${cartTotal} ETB`}
-                                disabled={totalPieces === 0}
+                                onSubmit={submitOrder}
+                                submitLabel={`Place Order — ${grandTotal} ETB`}
+                                disabled={!hasAnyItems}
                                 orderForm={orderForm}
                                 setOrderForm={setOrderForm}
                                 submitting={submitting}
@@ -628,7 +790,7 @@ export default function ShopPage() {
                             />
                         </div>
 
-                        <button onClick={clearCart} className="shop-cart-clear">Clear Cart</button>
+                        <button onClick={clearAll} className="shop-cart-clear">Clear Cart</button>
                     </>
                 )}
             </aside>
@@ -637,5 +799,4 @@ export default function ShopPage() {
             <div></div>
         </div>
     );
-    // Commit Test
 }

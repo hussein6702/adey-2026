@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono, EB_Garamond, Crimson_Text, Inter, Libre_Caslon_Text, Lato } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/UI/Navbar";
-import Footer from "@/components/UI/Footer";
+import SiteShell from "@/components/UI/SiteShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,11 +57,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${ebGaramond.variable} ${crimsonText.variable} ${libreCalson.variable} ${lato.variable} ${inter.variable} antialiased`}
       >
-        <Navbar />
-        {children}
-        <Footer />
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );
 }
+
 

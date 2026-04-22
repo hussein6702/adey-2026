@@ -1,9 +1,8 @@
 'use client';
-import { useEffect, useState, useCallback, memo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../../../supabase';
 
 const DEFAULT_CATEGORIES = ['White Chocolate', 'Milk Chocolate', 'Dark Chocolate', 'Liqueur', 'Truffle'];
-const ALLERGENS = ['Nuts', 'Dairy', 'Fruit'];
 
 const EMPTY_BONBON = {
     name: '',
@@ -17,9 +16,15 @@ const EMPTY_BONBON = {
     stock: 50,
 };
 
-function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
+function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories, allergensList }) {
     const [localBonbon, setLocalBonbon] = useState(bonbon);
     const [uploading, setUploading] = useState(false);
+
+    // Lock body scroll when modal is open
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
 
     async function handleImageUpload(e) {
         const file = e.target.files[0];
@@ -61,10 +66,10 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
     }
 
     return (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-            <div className="bg-white border border-gray-200 w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl relative">
-                <div className="p-10 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-sm z-10">
-                    <h2 className="text-gray-900 text-xl font-bold uppercase tracking-tight">
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6" onClick={onClose}>
+            <div className="bg-white border border-gray-200 w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                <div className="p-6 md:p-10 border-b border-gray-50 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-sm z-10 rounded-t-[32px]">
+                    <h2 className="text-gray-900 text-lg md:text-xl font-bold uppercase tracking-tight">
                         {isNew ? 'Create Product' : 'Modify Product'}
                     </h2>
                     <button
@@ -75,7 +80,7 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
                     </button>
                 </div>
 
-                <div className="p-10 space-y-8">
+                <div className="p-6 md:p-10 space-y-8">
                     <div>
                         <label className="text-gray-400 text-[10px] uppercase tracking-tight block mb-3 font-bold">Visual</label>
                         {localBonbon.image_url && (
@@ -160,7 +165,7 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
                     <div>
                         <label className="text-gray-400 text-[10px] uppercase tracking-tight block mb-4 font-bold">Allergens</label>
                         <div className="flex flex-wrap gap-3">
-                            {ALLERGENS.map(a => (
+                            {allergensList.map(a => (
                                 <button
                                     key={a}
                                     type="button"
@@ -188,7 +193,7 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
                     </div>
                 </div>
 
-                <div className="p-10 border-t border-gray-50 flex justify-end gap-4 bg-white/80 backdrop-blur-sm sticky bottom-0">
+                <div className="p-6 md:p-10 border-t border-gray-50 flex justify-end gap-4 bg-white/80 backdrop-blur-sm sticky bottom-0 rounded-b-[32px]">
                     <button
                         onClick={onClose}
                         className="text-sm text-gray-400 uppercase tracking-tight px-6 py-3 hover:text-gray-900 transition-colors font-bold"
@@ -210,6 +215,11 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories }) {
 
 function AddCategoryModal({ onClose, onSave }) {
     const [name, setName] = useState('');
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
 
     return (
         <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
@@ -244,13 +254,56 @@ function AddCategoryModal({ onClose, onSave }) {
     );
 }
 
+function AddAllergenModal({ onClose, onSave }) {
+    const [name, setName] = useState('');
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
+    return (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+            <div className="bg-white border border-gray-200 w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden">
+                <div className="p-8 border-b border-gray-50">
+                    <h2 className="text-gray-900 text-xl font-bold uppercase tracking-tight">Add Allergen</h2>
+                </div>
+                <div className="p-8 space-y-6">
+                    <div>
+                        <label className="text-gray-400 text-[10px] uppercase tracking-tight block mb-3 font-bold">Allergen Name</label>
+                        <input
+                            type="text"
+                            autoFocus
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            className="w-full bg-transparent border-b-2 border-gray-100 text-gray-900 text-xl py-2 focus:outline-none focus:border-gray-900 transition-colors font-bold tracking-tight"
+                            placeholder="e.g. Gluten"
+                        />
+                    </div>
+                </div>
+                <div className="p-8 border-t border-gray-50 flex justify-end gap-4 bg-gray-50">
+                    <button onClick={onClose} className="text-sm text-gray-400 uppercase tracking-tight px-4 py-3 hover:text-gray-900 transition-colors font-bold">Cancel</button>
+                    <button 
+                        onClick={() => name && onSave(name)}
+                        className="text-sm font-bold uppercase tracking-tight px-8 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all shadow-lg"
+                    >
+                        Create
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function StorefrontPage() {
     const [bonbons, setBonbons] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [allergensList, setAllergensList] = useState([]);
     const [boxPrices, setBoxPrices] = useState({});
     const [loading, setLoading] = useState(true);
     const [editingBonbon, setEditingBonbon] = useState(null);
     const [addingCategory, setAddingCategory] = useState(false);
+    const [addingAllergen, setAddingAllergen] = useState(false);
     const [isNew, setIsNew] = useState(false);
     const [editingPrices, setEditingPrices] = useState(false);
     const [tempBoxPrices, setTempBoxPrices] = useState({});
@@ -265,6 +318,13 @@ export default function StorefrontPage() {
         const currentBonbonCats = bonbonRes.data?.map(b => b.category) || [];
         const merged = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCats, ...currentBonbonCats])).filter(Boolean);
         setCategories(merged.sort());
+    }, []);
+
+    const fetchAllergens = useCallback(async () => {
+        const { data, error } = await supabase.from('allergens').select('*').order('name');
+        if (!error && data) {
+            setAllergensList(data.map(a => a.name));
+        }
     }, []);
 
     const fetchBonbons = useCallback(async () => {
@@ -283,8 +343,8 @@ export default function StorefrontPage() {
     }, []);
 
     useEffect(() => {
-        Promise.all([fetchBonbons(), fetchCategories(), fetchBoxPrices()]).then(() => setLoading(false));
-    }, [fetchBonbons, fetchCategories, fetchBoxPrices]);
+        Promise.all([fetchBonbons(), fetchCategories(), fetchBoxPrices(), fetchAllergens()]).then(() => setLoading(false));
+    }, [fetchBonbons, fetchCategories, fetchBoxPrices, fetchAllergens]);
 
     async function handleSaveBonbon(bonbonData, creating) {
         const record = {
@@ -336,6 +396,20 @@ export default function StorefrontPage() {
         fetchCategories();
     }
 
+    async function handleAddAllergen(name) {
+        const { error } = await supabase.from('allergens').insert([{ name }]);
+        if (error) alert('Error: ' + error.message);
+        setAddingAllergen(false);
+        fetchAllergens();
+    }
+
+    async function handleDeleteAllergen(allergenName) {
+        if (!confirm(`Delete allergen "${allergenName}"?`)) return;
+        const { error } = await supabase.from('allergens').delete().eq('name', allergenName);
+        if (error) alert('Error: ' + error.message);
+        fetchAllergens();
+    }
+
     async function saveBoxPrices() {
         for (const [box_size, price] of Object.entries(tempBoxPrices)) {
             await supabase.from('box_prices').update({ price: Number(price) }).eq('box_size', box_size);
@@ -352,10 +426,16 @@ export default function StorefrontPage() {
         <div className="w-full">
             <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div>
-                    <h1 className="text-4xl font-bold text-gray-900 tracking-tight uppercase">Storefront</h1>
-                    <p className="text-gray-400 text-base mt-2 font-medium">Manage your product catalogue and box prices</p>
+                    <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight uppercase">Storefront</h1>
+                    <p className="text-gray-400 text-sm md:text-base mt-2 font-medium">Manage your product catalogue and box prices</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
+                    <button
+                        onClick={() => setAddingAllergen(true)}
+                        className="px-6 py-2.5 bg-white text-gray-900 border border-gray-200 text-xs font-bold uppercase tracking-tight hover:border-gray-900 transition-all rounded-xl shadow-sm"
+                    >
+                        + Allergen
+                    </button>
                     <button
                         onClick={() => setAddingCategory(true)}
                         className="px-6 py-2.5 bg-white text-gray-900 border border-gray-200 text-xs font-bold uppercase tracking-tight hover:border-gray-900 transition-all rounded-xl shadow-sm"
@@ -371,7 +451,30 @@ export default function StorefrontPage() {
                 </div>
             </header>
 
-            <div className="mb-12 border border-gray-100 p-8 bg-white rounded-[32px] shadow-sm">
+            {/* Allergens Management */}
+            <div className="mb-8 border border-gray-100 p-6 md:p-8 bg-white rounded-[32px] shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-gray-900 text-lg font-bold uppercase tracking-tight">Allergens</h2>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                    {allergensList.map(a => (
+                        <div key={a} className="flex items-center gap-0">
+                            <span className="text-xs uppercase tracking-tight px-5 py-2 border-2 border-gray-100 rounded-l-xl font-bold text-gray-600 bg-gray-50">{a}</span>
+                            <button
+                                onClick={() => handleDeleteAllergen(a)}
+                                className="text-[10px] px-3 py-2 border-2 border-l-0 border-gray-100 rounded-r-xl text-red-300 hover:text-red-500 hover:border-red-200 transition-all bg-gray-50"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ))}
+                    {allergensList.length === 0 && (
+                        <p className="text-gray-300 text-sm font-medium">No allergens defined yet.</p>
+                    )}
+                </div>
+            </div>
+
+            <div className="mb-12 border border-gray-100 p-6 md:p-8 bg-white rounded-[32px] shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-gray-900 text-lg font-bold uppercase tracking-tight">Box Matrix (ETB)</h2>
                     {!editingPrices ? (
@@ -429,7 +532,46 @@ export default function StorefrontPage() {
                 ))}
             </div>
 
-            <div className="border border-gray-100 bg-white rounded-2xl shadow-sm overflow-hidden">
+            {/* Mobile: Card layout */}
+            <div className="block md:hidden space-y-4">
+                {filtered.map(b => (
+                    <div key={b.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
+                        <div className="flex items-center gap-4 mb-3">
+                            {b.image_url ? (
+                                <img src={b.image_url} alt={b.name} className="w-14 h-14 rounded-xl object-cover shadow-sm border border-white" loading="lazy" />
+                            ) : (
+                                <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300 font-bold text-[10px]">?</div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-gray-900 text-base font-bold tracking-tight truncate">{b.name}</p>
+                                <p className="text-gray-400 text-[10px] font-medium tracking-tight truncate">{b.description}</p>
+                            </div>
+                            <button
+                                onClick={() => toggleActive(b)}
+                                className={`w-10 h-5 rounded-full relative transition-all flex-shrink-0 ${b.active ? 'bg-green-500' : 'bg-gray-200'}`}
+                            >
+                                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${b.active ? 'left-5.5' : 'left-0.5'}`} />
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <span className="text-gray-500 text-xs font-bold">{b.category}</span>
+                                <span className="text-gray-900 text-lg font-mono font-bold tracking-tighter">{b.price}</span>
+                                <span className={`text-sm font-mono font-bold ${b.stock !== null && b.stock <= 5 ? 'text-amber-500' : 'text-gray-900'}`}>
+                                    {b.stock !== null && b.stock !== undefined ? `×${b.stock}` : '∞'}
+                                </span>
+                            </div>
+                            <div className="flex gap-3 uppercase text-[10px] font-bold tracking-tight">
+                                <button onClick={() => { setEditingBonbon({ ...b }); setIsNew(false); }} className="text-gray-400 hover:text-gray-900 transition-colors">Edit</button>
+                                <button onClick={() => deleteBonbon(b.id)} className="text-red-200 hover:text-red-500 transition-colors">Trash</button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Desktop: Table layout */}
+            <div className="hidden md:block border border-gray-100 bg-white rounded-2xl shadow-sm overflow-hidden">
                 <table className="w-full text-left table-auto">
                     <thead>
                         <tr className="border-b border-gray-50 bg-gray-50/50 text-gray-400 font-bold text-[10px] uppercase tracking-tight">
@@ -494,6 +636,7 @@ export default function StorefrontPage() {
                     onClose={() => { setEditingBonbon(null); setIsNew(false); }}
                     onSave={handleSaveBonbon}
                     categories={categories}
+                    allergensList={allergensList}
                 />
             )}
 
@@ -501,6 +644,13 @@ export default function StorefrontPage() {
                 <AddCategoryModal
                     onClose={() => setAddingCategory(false)}
                     onSave={handleAddCategory}
+                />
+            )}
+
+            {addingAllergen && (
+                <AddAllergenModal
+                    onClose={() => setAddingAllergen(false)}
+                    onSave={handleAddAllergen}
                 />
             )}
         </div>

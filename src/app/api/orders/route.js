@@ -9,7 +9,6 @@ async function getBoxPrices() {
     .select('*');
 
   if (error || !data) {
-    // Fallback defaults
     return { '4-piece': 800, '9-piece': 1600, '16-piece': 2400, '40-piece': 5600 };
   }
 
@@ -42,7 +41,6 @@ function calculateAmount(boxes, boxPrices) {
       total += boxPrices[size] * count;
     }
   }
-  // Free-choice pieces: price individually (per-piece from 4-piece box / 4)
   if (boxes['free-choice'] > 0) {
     const perPiece = (boxPrices['4-piece'] || 800) / 4;
     total += perPiece * boxes['free-choice'];
@@ -55,7 +53,7 @@ export async function POST(req) {
     const body = await req.json();
     console.log('Order received', body);
 
-    const { customerName, pickUpType, userEmail, phoneNumber, orderType, preferredContact } = body;
+    const { customerName, pickUpType, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize } = body;
 
     if (!customerName || !pickUpType || !userEmail || !phoneNumber || !orderType) {
       return new Response(
@@ -66,40 +64,14 @@ export async function POST(req) {
 
     const boxPrices = await getBoxPrices();
 
-    let boxes, amount, orderItems;
+    let boxes = { '40-piece': 0, '16-piece': 0, '9-piece': 0, '4-piece': 0, 'free-choice': 0 };
+    let amount = 0;
+    let orderItems = null;
 
-    if (orderType === 'bestSeller') {
-      // Best seller: user selects a box size + quantity
-      const { boxSize, quantity } = body;
-      if (!boxSize || !quantity || quantity < 1) {
-        return new Response(
-          JSON.stringify({ success: false, error: "Missing boxSize or quantity for best seller order" }),
-          { status: 400 }
-        );
-      }
+    // --- Handle custom bonbon items ---
+    const { items, bestSellerItems } = body;
 
-      if (!boxPrices[boxSize]) {
-        return new Response(
-          JSON.stringify({ success: false, error: `Invalid box size: ${boxSize}` }),
-          { status: 400 }
-        );
-      }
-
-      boxes = { '40-piece': 0, '16-piece': 0, '9-piece': 0, '4-piece': 0, 'free-choice': 0 };
-      boxes[boxSize] = quantity;
-      amount = boxPrices[boxSize] * quantity;
-      orderItems = null; // Best seller — no individual bonbon selection
-
-    } else if (orderType === 'custom') {
-      // Custom: user picks individual bonbons
-      const { items } = body; // Array of { bonbonId, bonbonName, quantity, imageUrl }
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        return new Response(
-          JSON.stringify({ success: false, error: "No items provided for custom order" }),
-          { status: 400 }
-        );
-      }
-
+    if (items && Array.isArray(items) && items.length > 0) {
       const totalPieces = items.reduce((sum, item) => sum + item.quantity, 0);
 
       if (totalPieces > 40) {
@@ -109,32 +81,92 @@ export async function POST(req) {
         );
       }
 
-      // Calculate amount per-piece for custom orders (as requested by user previously)
-      // We'll use the bonbon prices from the database for accuracy
       const { data: bonbons } = await supabase.from('bonbons').select('id, price');
-      amount = 0;
       
-      // Preserve imageUrl while calculating amount
-      const enrichedItems = items.map(item => {
-        const b = bonbons?.find(x => x.id === item.bonbonId);
-        if (b) amount += b.price * item.quantity;
-        return {
-          ...item,
-          imageUrl: item.imageUrl // Ensure imageUrl is kept
-        };
-      });
+      const enrichedItems = items.map(item => ({
+        ...item,
+        imageUrl: item.imageUrl
+      }));
 
-      boxes = packIntoBoxes(totalPieces);
+      if (wantsBox && selectedBoxSize && boxPrices[selectedBoxSize]) {
+        // Box selected: use the fixed box price
+        amount += boxPrices[selectedBoxSize];
+        boxes[selectedBoxSize] = (boxes[selectedBoxSize] || 0) + 1;
+      } else if (wantsBox) {
+        // Box but no specific size: pack into boxes
+        const packed = packIntoBoxes(totalPieces);
+        for (const [k, v] of Object.entries(packed)) {
+          boxes[k] = (boxes[k] || 0) + v;
+        }
+        amount += calculateAmount(packed, boxPrices);
+      } else {
+        // No box: use individual bonbon prices
+        enrichedItems.forEach(item => {
+          const b = bonbons?.find(x => x.id === item.bonbonId);
+          if (b) amount += b.price * item.quantity;
+        });
+      }
+
       orderItems = enrichedItems;
+    }
 
-    } else {
+    // --- Handle best seller items ---
+    if (bestSellerItems && Array.isArray(bestSellerItems) && bestSellerItems.length > 0) {
+      // Initialize orderItems if null
+      if (!orderItems) orderItems = [];
+
+      for (const bsItem of bestSellerItems) {
+        const { boxSize, qty } = bsItem;
+        if (boxSize && qty > 0 && boxPrices[boxSize]) {
+          boxes[boxSize] = (boxes[boxSize] || 0) + qty;
+          amount += boxPrices[boxSize] * qty;
+
+          // Add to order_items so it shows in admin
+          orderItems.push({
+            type: 'bestSeller',
+            boxSize,
+            quantity: qty,
+            bonbonName: `Best Seller ${boxSize.replace('-', ' ').replace('piece', 'Piece')} Box`,
+            price: boxPrices[boxSize],
+          });
+        }
+      }
+    }
+
+    // --- Handle legacy bestSeller-only order type ---
+    if (orderType === 'bestSeller' && !bestSellerItems) {
+      const { boxSize, quantity } = body;
+      if (!boxSize || !quantity || quantity < 1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing boxSize or quantity for best seller order" }),
+          { status: 400 }
+        );
+      }
+      if (!boxPrices[boxSize]) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Invalid box size: ${boxSize}` }),
+          { status: 400 }
+        );
+      }
+      boxes[boxSize] = quantity;
+      amount = boxPrices[boxSize] * quantity;
+      orderItems = [{
+        type: 'bestSeller',
+        boxSize,
+        quantity,
+        bonbonName: `Best Seller ${boxSize.replace('-', ' ').replace('piece', 'Piece')} Box`,
+        price: boxPrices[boxSize],
+      }];
+    }
+
+    if (amount === 0 && !orderItems && !bestSellerItems) {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid orderType. Use 'custom' or 'bestSeller'" }),
+        JSON.stringify({ success: false, error: "No items in order" }),
         { status: 400 }
       );
     }
 
-    console.log("boxes:", boxes, "amount:", amount, "orderItems with images?", !!orderItems?.[0]?.imageUrl);
+    console.log("boxes:", boxes, "amount:", amount, "orderType:", orderType, "wantsBox:", wantsBox);
 
     // Insert into Supabase
     const { data, error } = await supabase.from('orders').insert([{
@@ -147,7 +179,9 @@ export async function POST(req) {
       order_type: orderType,
       order_items: orderItems,
       preferred_contact: preferredContact || 'whatsapp',
-      status: 'received'
+      status: 'received',
+      wants_box: wantsBox !== undefined ? wantsBox : true,
+      order_source: orderSource || 'online',
     }]);
 
     if (error) {
@@ -156,9 +190,8 @@ export async function POST(req) {
     }
 
     // Decrement stock for custom orders
-    if (orderType === 'custom' && orderItems) {
+    if (orderItems) {
       for (const item of orderItems) {
-        // Fetch current stock, then update
         const { data: bonbon } = await supabase
           .from('bonbons')
           .select('stock')

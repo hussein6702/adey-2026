@@ -8,7 +8,10 @@ import {
   ShoppingBag, 
   BarChart3, 
   Store, 
-  LogOut 
+  LogOut,
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
 
 const poppins = Poppins({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700'] });
@@ -17,6 +20,7 @@ export default function AdminRootLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const auth = localStorage.getItem('admin_access') === 'true';
@@ -27,6 +31,11 @@ export default function AdminRootLayout({ children }) {
     }
   }, [pathname, router]);
 
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   if (isAuthorized === null && pathname !== '/login') return <div className="h-screen bg-gray-50" />;
   if (pathname === '/login') return <div className={poppins.className}>{children}</div>;
 
@@ -34,14 +43,48 @@ export default function AdminRootLayout({ children }) {
     { name: 'Orders', href: '/orders', icon: ShoppingBag },
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Storefront', href: '/storefront', icon: Store },
+    { name: 'Walk-ins', href: '/walk-ins', icon: Users },
   ];
 
   return (
     <div className={`admin-root ${poppins.className} flex h-screen bg-gray-50 text-gray-800`}>
-      <aside className="w-64 bg-white flex flex-col border-r border-gray-200 shadow-sm">
-        <div className="p-10">
-          <h2 className="text-gray-900 text-2xl font-bold tracking-tight">BONBON</h2>
-          <p className="text-gray-400 text-[10px] tracking-normal mt-1 font-semibold uppercase">Administration</p>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setSidebarOpen(true)}
+        className="fixed top-4 left-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:text-gray-900 transition-colors"
+        aria-label="Open menu"
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Sidebar backdrop (mobile only) */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-64 bg-white flex flex-col border-r border-gray-200 shadow-sm
+        transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+      `}>
+        <div className="p-10 flex items-center justify-between">
+          <div>
+            <h2 className="text-gray-900 text-2xl font-bold tracking-tight">BONBON</h2>
+            <p className="text-gray-400 text-[10px] tracking-normal mt-1 font-semibold uppercase">Administration</p>
+          </div>
+          {/* Close button (mobile only) */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
         </div>
 
         <nav className="flex-1 px-6 space-y-2">
@@ -78,7 +121,7 @@ export default function AdminRootLayout({ children }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto px-12 py-16" style={{ willChange: 'scroll-position', contain: 'paint' }}>
+      <main className="flex-1 overflow-y-auto px-4 py-6 md:px-12 md:py-16 pt-16 md:pt-16">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>

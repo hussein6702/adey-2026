@@ -645,6 +645,58 @@
     font-family: var(--font-calson), Georgia, serif;
 }
 
+.shop-cart-section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: #9a8b78;
+    font-family: var(--font-calson), Georgia, serif;
+    text-transform: uppercase;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eae5dd;
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+}
+
+.shop-cart-bs-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 2px;
+    background: #f9f6f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #9a7b4f;
+    flex-shrink: 0;
+}
+
+/* Best seller cart preview on the best sellers tab */
+.bs-cart-preview {
+    margin-top: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: #fff;
+    border: 1px solid #eae5dd;
+}
+
+.bs-cart-preview-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: #9a8b78;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-calson), Georgia, serif;
+}
+
+.bs-cart-preview-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6b5e50;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f3efe8;
+    font-family: var(--font-calson), Georgia, serif;
+}
+
 /* --- Cart Breakdown --- */
 .shop-cart-breakdown {
     padding: 1.5rem 2rem;
@@ -962,6 +1014,184 @@
     to {
         opacity: 1;
     }
+}
+
+/* --- Box Choice Modal --- */
+.box-choice-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 36, 24, 0.35);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    animation: fadeIn 0.4s ease;
+}
+
+.box-choice-modal {
+    background: #fff;
+    border: 1px solid #eae5dd;
+    max-width: 480px;
+    width: 100%;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(44, 36, 24, 0.15);
+}
+
+.box-choice-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.box-choice-title {
+    font-family: var(--font-eb), Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: #2c2418;
+    margin-bottom: 0.5rem;
+}
+
+.box-choice-desc {
+    font-size: 0.9rem;
+    color: #9a8b78;
+    font-family: var(--font-calson), Georgia, serif;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.box-choice-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.box-choice-btn {
+    width: 100%;
+    padding: 0.85rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-calson), Georgia, serif;
+    border: 1px solid #d5cec3;
+}
+
+.box-choice-yes {
+    background: #2c2418;
+    color: #fff;
+    border-color: #2c2418;
+}
+
+.box-choice-yes:hover:not(:disabled) {
+    background: #45382a;
+}
+
+.box-choice-yes:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.box-choice-no {
+    background: transparent;
+    color: #6b5e50;
+}
+
+.box-choice-no:hover {
+    background: #f5f2ed;
+    border-color: #c5bdb0;
+}
+
+.box-choice-back {
+    background: transparent;
+    color: #b0a595;
+    border-color: transparent;
+}
+
+.box-choice-back:hover {
+    color: #6b5e50;
+}
+
+.box-choice-sizes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.box-size-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 0.8rem;
+    background: #fff;
+    border: 1px solid #eae5dd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    gap: 0.3rem;
+}
+
+.box-size-option:hover {
+    border-color: #c5bdb0;
+    box-shadow: 0 2px 12px rgba(44, 36, 24, 0.06);
+}
+
+.box-size-option.selected {
+    border-color: #2c2418;
+    background: #faf7f3;
+}
+
+.box-size-num {
+    font-family: var(--font-eb), Georgia, serif;
+    font-size: 2rem;
+    color: #2c2418;
+    font-weight: 400;
+}
+
+.box-size-label {
+    font-size: 0.7rem;
+    color: #9a8b78;
+    font-family: var(--font-calson), Georgia, serif;
+}
+
+.box-size-price {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6b5e50;
+    font-family: var(--font-eb), Georgia, serif;
+}
+
+/* --- Box Indicator Banner --- */
+.shop-box-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.6rem 2rem;
+    background: #f9f6f1;
+    border-bottom: 1px solid #eae5dd;
+    font-size: 0.8rem;
+    color: #6b5e50;
+    font-family: var(--font-calson), Georgia, serif;
+}
+
+.shop-box-change {
+    background: none;
+    border: 1px solid #d5cec3;
+    color: #9a8b78;
+    font-size: 0.65rem;
+    padding: 0.25rem 0.8rem;
+    cursor: pointer;
+    font-family: var(--font-calson), Georgia, serif;
+    transition: all 0.2s ease;
+    letter-spacing: 0.04em;
+}
+
+.shop-box-change:hover {
+    border-color: #2c2418;
+    color: #2c2418;
 }
 
 /* --- Responsive --- */
