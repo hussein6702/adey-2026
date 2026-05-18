@@ -543,7 +543,7 @@
     top: 0;
     right: 0;
     width: 100%;
-    max-width: 420px;
+    max-width: 520px;
     height: 100vh;
     background: #fff;
     border-left: 1px solid #eae5dd;
@@ -1164,34 +1164,54 @@
 }
 
 /* --- Box Indicator Banner --- */
-.shop-box-indicator {
+.shop-box-selector {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    padding: 0.6rem 2rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.8rem 2rem;
     background: #f9f6f1;
     border-bottom: 1px solid #eae5dd;
-    font-size: 0.8rem;
-    color: #6b5e50;
-    font-family: var(--font-calson), Georgia, serif;
 }
 
-.shop-box-change {
-    background: none;
-    border: 1px solid #d5cec3;
+.shop-box-selector-label {
+    font-size: 0.75rem;
     color: #9a8b78;
-    font-size: 0.65rem;
-    padding: 0.25rem 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: var(--font-calson), Georgia, serif;
+    margin-right: 0.5rem;
+}
+
+.shop-box-selector-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.box-opt-btn {
+    background: #fff;
+    border: 1px solid #eae5dd;
+    color: #6b5e50;
+    font-size: 0.75rem;
+    padding: 0.4rem 1rem;
     cursor: pointer;
     font-family: var(--font-calson), Georgia, serif;
     transition: all 0.2s ease;
     letter-spacing: 0.04em;
 }
 
-.shop-box-change:hover {
-    border-color: #2c2418;
+.box-opt-btn:hover {
+    border-color: #c5bdb0;
     color: #2c2418;
+}
+
+.box-opt-btn.active {
+    background: #2c2418;
+    border-color: #2c2418;
+    color: #fff;
 }
 
 /* --- Responsive --- */

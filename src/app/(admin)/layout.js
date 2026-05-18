@@ -48,39 +48,39 @@ export default function AdminRootLayout({ children }) {
 
   return (
     <div className={`admin-root ${poppins.className} flex h-screen bg-gray-50 text-gray-800`}>
-      {/* Mobile hamburger button */}
+      {/* Tablet/Mobile hamburger button */}
       <button
         onClick={() => setSidebarOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:text-gray-900 transition-colors"
+        className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-600 hover:text-gray-900 transition-colors"
         aria-label="Open menu"
       >
         <Menu size={20} />
       </button>
 
-      {/* Sidebar backdrop (mobile only) */}
+      {/* Sidebar backdrop (tablet/mobile only) */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed md:static inset-y-0 left-0 z-50
+        fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-white flex flex-col border-r border-gray-200 shadow-sm
         transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
       `}>
         <div className="p-10 flex items-center justify-between">
           <div>
             <h2 className="text-gray-900 text-2xl font-bold tracking-tight">BONBON</h2>
             <p className="text-gray-400 text-[10px] tracking-normal mt-1 font-semibold uppercase">Administration</p>
           </div>
-          {/* Close button (mobile only) */}
+          {/* Close button (tablet/mobile only) */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 transition-colors"
+            className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 transition-colors"
             aria-label="Close menu"
           >
             <X size={16} />
@@ -121,7 +121,7 @@ export default function AdminRootLayout({ children }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto px-4 py-6 md:px-12 md:py-16 pt-16 md:pt-16">
+      <main className="flex-1 overflow-y-auto px-3 py-4 md:px-6 md:py-8 lg:px-12 lg:py-16 pt-16 lg:pt-16">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>

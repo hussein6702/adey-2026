@@ -21,7 +21,7 @@ export default function OrdersPage() {
     const [bonbons, setBonbons] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewingOrder, setViewingOrder] = useState(null);
-    
+
     const getLocalDateString = (date = new Date()) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -31,8 +31,8 @@ export default function OrdersPage() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [dateRange, setDateRange] = useState({
-        start: getLocalDateString(),
-        end: getLocalDateString(),
+        start: '',
+        end: '',
     });
     const [sortField, setSortField] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
@@ -98,12 +98,15 @@ export default function OrdersPage() {
         const s = searchTerm.toLowerCase();
         if (s) {
             return (order.customer_name || '').toLowerCase().includes(s) ||
-                   (order.phone_number || '').includes(s) ||
-                   (order.user_email || '').toLowerCase().includes(s) ||
-                   String(order.id).toLowerCase().includes(s);
+                (order.phone_number || '').includes(s) ||
+                (order.user_email || '').toLowerCase().includes(s) ||
+                String(order.id).toLowerCase().includes(s);
         }
-        const orderDate = getLocalDateString(new Date(order.created_at));
-        return orderDate >= dateRange.start && orderDate <= dateRange.end;
+        if (dateRange.start && dateRange.end) {
+            const orderDate = getLocalDateString(new Date(order.created_at));
+            return orderDate >= dateRange.start && orderDate <= dateRange.end;
+        }
+        return true;
     });
 
     // Sort
@@ -147,6 +150,28 @@ export default function OrdersPage() {
         }
     }
 
+    let displayOrders = sortedOrders;
+
+    // Grouping logic
+    const todayStr = getLocalDateString(new Date());
+    const lastWeekDate = new Date();
+    lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+    const lastWeekStr = getLocalDateString(lastWeekDate);
+
+    const groupedOrders = { today: [], lastWeek: [], older: [] };
+    const isDefaultSort = sortField === 'created_at' && sortDir === 'desc';
+    const isFiltered = searchTerm || dateRange.start || dateRange.end;
+    const shouldGroup = isDefaultSort && !isFiltered;
+
+    if (shouldGroup) {
+        displayOrders.forEach(order => {
+            const orderDateStr = getLocalDateString(new Date(order.created_at));
+            if (orderDateStr === todayStr) groupedOrders.today.push(order);
+            else if (orderDateStr >= lastWeekStr) groupedOrders.lastWeek.push(order);
+            else groupedOrders.older.push(order);
+        });
+    }
+
     function getMessageText(order) {
         let msg = `Hello ${order.customer_name},\n\nWe received your order for `;
         if (order.order_type === 'bestSeller') {
@@ -163,18 +188,60 @@ export default function OrdersPage() {
         return source === 'walk-in' ? 'Walk-in' : 'Online';
     }
 
+    function getOrderTypeLabel(order) {
+        const isBestSeller = order.order_type === 'bestSeller';
+        const isMixed = order.order_type === 'mixed';
+        let typeStr = isBestSeller ? 'Best Seller' : isMixed ? 'Mixed' : 'Custom';
+
+        // If no box and only custom bonbons → "Loose Bonbons"
+        if (order.wants_box === false) {
+            const allItems = order.order_items || [];
+            const hasOnlyBonbons = allItems.every(i => i.type !== 'bestSeller');
+            if (hasOnlyBonbons && allItems.length > 0) return 'Loose Bonbons';
+            return `${typeStr} (No Box)`;
+        }
+
+        // Parse composition to show accurate mixed boxes
+        const validSizes = ['4-piece', '9-piece', '16-piece', '40-piece'];
+        const boxes = Object.entries(order.composition || {})
+            .filter(([k, v]) => v > 0 && validSizes.includes(k))
+            .map(([k, v]) => v > 1 ? `${v}× ${k.replace('-piece', ' Pc')}` : k.replace('-piece', ' Pc'));
+
+        if (boxes.length > 0) return `${typeStr} (${boxes.join(', ')})`;
+        
+        // Fallback: use selected_box_size if composition is somehow empty
+        if (order.selected_box_size) {
+            const sizeLabel = order.selected_box_size.replace('-piece', ' Pc');
+            const qty = order.custom_box_quantity || 1;
+            if (qty > 1) return `${typeStr} (${qty}× ${sizeLabel})`;
+            return `${typeStr} (${sizeLabel})`;
+        }
+
+        if (boxes.length > 0) return `${typeStr} (${boxes.join(', ')})`;
+
+        return `${typeStr} Box`;
+    }
+
+    function getTypeBadgeStyle(order) {
+        const label = getOrderTypeLabel(order);
+        if (label === 'Loose Bonbons') return 'text-teal-600 border-teal-100 bg-teal-50';
+        if (order.order_type === 'bestSeller') return 'text-amber-600 border-amber-100 bg-amber-50';
+        if (order.order_type === 'mixed') return 'text-purple-600 border-purple-100 bg-purple-50';
+        return 'text-blue-600 border-blue-100 bg-blue-50';
+    }
+
     if (loading) return <div className="p-20 text-gray-400 font-semibold uppercase tracking-tight text-base">Loading...</div>;
 
     return (
         <div className="w-full">
-            <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <header className="mb-6 md:mb-10 flex flex-col lg:flex-row lg:items-end justify-between gap-4 md:gap-6">
                 <div>
-                    <h1 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight uppercase">Orders</h1>
-                    <p className="text-gray-400 text-sm md:text-base mt-2 font-medium">Manage and track your customer transactions</p>
+                    <h1 className="text-xl md:text-2xl lg:text-4xl font-bold text-gray-900 tracking-tight uppercase">Orders</h1>
+                    <p className="text-gray-400 text-xs md:text-sm lg:text-base mt-1 md:mt-2 font-medium">Manage and track your customer transactions</p>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row items-stretch gap-3">
-                    <input 
+                    <input
                         type="text"
                         placeholder="Search..."
                         value={searchTerm}
@@ -182,16 +249,16 @@ export default function OrdersPage() {
                         className="bg-white border border-gray-200 text-gray-800 text-sm px-4 py-2.5 w-full sm:w-64 focus:outline-none focus:border-gray-900 tracking-tight rounded-xl shadow-sm transition-all"
                     />
                     <div className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-200 rounded-xl shadow-sm">
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             title="Start Date"
                             value={dateRange.start}
                             onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                             className="bg-transparent text-gray-700 text-xs font-bold uppercase tracking-tight focus:outline-none cursor-pointer"
                         />
                         <span className="text-gray-200">/</span>
-                        <input 
-                            type="date" 
+                        <input
+                            type="date"
                             title="End Date"
                             value={dateRange.end}
                             onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
@@ -220,11 +287,10 @@ export default function OrdersPage() {
                     <button
                         key={s.field}
                         onClick={() => toggleSort(s.field)}
-                        className={`text-[10px] uppercase tracking-tight px-4 py-2 border rounded-xl font-bold flex items-center gap-1.5 transition-all ${
-                            sortField === s.field
-                                ? 'bg-gray-900 text-white border-gray-900 shadow-md'
-                                : 'bg-white text-gray-400 border-gray-100 hover:text-gray-900 hover:border-gray-900'
-                        }`}
+                        className={`text-[10px] uppercase tracking-tight px-4 py-2 border rounded-xl font-bold flex items-center gap-1.5 transition-all ${sortField === s.field
+                            ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                            : 'bg-white text-gray-400 border-gray-100 hover:text-gray-900 hover:border-gray-900'
+                            }`}
                     >
                         {s.label}
                         {sortField === s.field && (
@@ -234,57 +300,84 @@ export default function OrdersPage() {
                 ))}
             </div>
 
-            {/* Mobile: Card layout */}
-            <div className="block md:hidden space-y-3">
-                {sortedOrders.map(order => (
-                    <div 
-                        key={order.id} 
-                        className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                        onClick={() => setViewingOrder(order)}
-                    >
-                        <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1 min-w-0">
-                                <p className="text-gray-900 text-sm font-bold tracking-tight truncate">{order.customer_name}</p>
-                                <p className="text-gray-400 text-[10px] font-medium truncate">{order.user_email}</p>
+            {/* Mobile/Tablet: Card layout */}
+            <div className="block lg:hidden space-y-3">
+                {(() => {
+                    const renderMobileCard = (order) => (
+                        <div
+                            key={order.id}
+                            className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 cursor-pointer active:bg-gray-50 transition-colors"
+                            onClick={() => setViewingOrder(order)}
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-gray-900 text-sm font-bold tracking-tight truncate">{order.customer_name}</p>
+                                    <p className="text-gray-400 text-[10px] font-medium truncate">{order.user_email}</p>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="text-gray-900 font-mono text-lg font-bold tracking-tighter">{order.amount}</span>
+                                    <span className="text-gray-400 font-mono text-[10px]">ETB</span>
+                                </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
-                                <span className="text-gray-900 font-mono text-lg font-bold tracking-tighter">{order.amount}</span>
-                                <span className="text-gray-400 font-mono text-[10px]">ETB</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <select
+                                    value={order.status === 'pending' ? 'received' : (order.status || 'received')}
+                                    onChange={(e) => { e.stopPropagation(); updateStatus(order.id, e.target.value); }}
+                                    onClick={e => e.stopPropagation()}
+                                    className={`text-[10px] uppercase font-bold tracking-tight px-2 py-1 rounded-lg bg-white border border-gray-100 focus:outline-none ${STATUS_COLORS[order.status] || 'text-gray-500'}`}
+                                >
+                                    <option value="received">Received</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                                <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${getTypeBadgeStyle(order)}`}>
+                                    {getOrderTypeLabel(order)}
+                                </span>
+                                <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${SOURCE_STYLES[order.order_source] || SOURCE_STYLES['online']}`}>
+                                    {getSourceLabel(order.order_source)}
+                                </span>
+                                <span className="text-gray-400 font-mono text-[10px] font-bold ml-auto">
+                                    {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <select
-                                value={order.status === 'pending' ? 'received' : (order.status || 'received')}
-                                onChange={(e) => { e.stopPropagation(); updateStatus(order.id, e.target.value); }}
-                                onClick={e => e.stopPropagation()}
-                                className={`text-[10px] uppercase font-bold tracking-tight px-2 py-1 rounded-lg bg-white border border-gray-100 focus:outline-none ${STATUS_COLORS[order.status] || 'text-gray-500'}`}
-                            >
-                                <option value="received">Received</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
-                            <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${order.order_type === 'bestSeller' ? 'text-amber-600 border-amber-100 bg-amber-50' : order.order_type === 'mixed' ? 'text-purple-600 border-purple-100 bg-purple-50' : 'text-blue-600 border-blue-100 bg-blue-50'}`}>
-                                {order.order_type === 'bestSeller' ? 'Best Seller' : order.order_type === 'mixed' ? 'Mixed' : 'Custom'}
-                            </span>
-                            <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${SOURCE_STYLES[order.order_source] || SOURCE_STYLES['online']}`}>
-                                {getSourceLabel(order.order_source)}
-                            </span>
-                            <span className="text-gray-400 font-mono text-[10px] font-bold ml-auto">
-                                {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-                {sortedOrders.length === 0 && (
-                    <div className="py-20 text-center text-gray-300 text-lg font-bold tracking-tight">
-                        No orders found
-                    </div>
-                )}
+                    );
+
+                    const renderGroup = (orders, title) => {
+                        if (orders.length === 0) return null;
+                        return (
+                            <div key={title} className="space-y-3">
+                                <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-wider ml-1 mt-4 mb-2">{title} ({orders.length})</h3>
+                                {orders.map(renderMobileCard)}
+                            </div>
+                        );
+                    };
+
+                    if (displayOrders.length === 0) {
+                        return (
+                            <div className="py-20 text-center text-gray-300 text-lg font-bold tracking-tight">
+                                No orders found
+                            </div>
+                        );
+                    }
+
+                    if (shouldGroup) {
+                        return (
+                            <>
+                                {renderGroup(groupedOrders.today, 'Today')}
+                                {renderGroup(groupedOrders.lastWeek, 'Last 7 Days')}
+                                {renderGroup(groupedOrders.older, 'Older')}
+                            </>
+                        );
+                    }
+
+                    return displayOrders.map(renderMobileCard);
+                })()}
             </div>
 
             {/* Desktop: Table layout */}
-            <div className="hidden md:block border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+            <div className="hidden lg:block border border-gray-200 bg-white rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left table-auto">
                     <thead>
                         <tr className="border-b border-gray-100 bg-gray-50/50 text-gray-400 font-bold text-[10px] uppercase tracking-tight">
@@ -297,10 +390,10 @@ export default function OrdersPage() {
                             <th className="px-6 py-4 text-right">Preview</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {sortedOrders.map((order) => (
-                            <tr 
-                                key={order.id} 
+                    {(() => {
+                        const renderRow = (order) => (
+                            <tr
+                                key={order.id}
                                 className="hover:bg-gray-50 transition-colors cursor-pointer group"
                                 onClick={() => setViewingOrder(order)}
                             >
@@ -325,8 +418,8 @@ export default function OrdersPage() {
                                     <p className="text-gray-400 text-[10px] font-medium">{order.user_email}</p>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${order.order_type === 'bestSeller' ? 'text-amber-600 border-amber-100 bg-amber-50' : order.order_type === 'mixed' ? 'text-purple-600 border-purple-100 bg-purple-50' : 'text-blue-600 border-blue-100 bg-blue-50'}`}>
-                                        {order.order_type === 'bestSeller' ? 'Best Seller' : order.order_type === 'mixed' ? 'Mixed' : 'Custom Box'}
+                                    <span className={`text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border ${getTypeBadgeStyle(order)}`}>
+                                        {getOrderTypeLabel(order)}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
@@ -341,11 +434,11 @@ export default function OrdersPage() {
                                             const globalBonbon = bonbons.find(b => b.id === item.bonbonId);
                                             const itemImage = item.imageUrl || globalBonbon?.image_url;
                                             return itemImage ? (
-                                                <img 
-                                                    key={i} 
-                                                    src={itemImage} 
-                                                    alt="" 
-                                                    className="w-8 h-8 rounded-full object-cover border-2 border-white -ml-2 shadow-sm" 
+                                                <img
+                                                    key={i}
+                                                    src={itemImage}
+                                                    alt=""
+                                                    className="w-8 h-8 rounded-full object-cover border-2 border-white -ml-2 shadow-sm"
                                                 />
                                             ) : (
                                                 <div key={i} className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white -ml-2 shadow-sm" />
@@ -359,10 +452,36 @@ export default function OrdersPage() {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
-                    </tbody>
+                        );
+
+                        const renderGroup = (orders, title) => {
+                            if (orders.length === 0) return null;
+                            return (
+                                <tbody key={title} className="divide-y divide-gray-50">
+                                    <tr className="bg-gray-50/50">
+                                        <td colSpan="7" className="px-6 py-2 text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                                            {title} ({orders.length})
+                                        </td>
+                                    </tr>
+                                    {orders.map(renderRow)}
+                                </tbody>
+                            );
+                        };
+
+                        if (shouldGroup) {
+                            return (
+                                <>
+                                    {renderGroup(groupedOrders.today, 'Today')}
+                                    {renderGroup(groupedOrders.lastWeek, 'Last 7 Days')}
+                                    {renderGroup(groupedOrders.older, 'Older')}
+                                </>
+                            );
+                        }
+
+                        return <tbody className="divide-y divide-gray-50">{displayOrders.map(renderRow)}</tbody>;
+                    })()}
                 </table>
-                {sortedOrders.length === 0 && (
+                {displayOrders.length === 0 && (
                     <div className="py-20 text-center text-gray-300 text-lg font-bold tracking-tight">
                         No orders found
                     </div>
@@ -370,9 +489,9 @@ export default function OrdersPage() {
             </div>
 
             {viewingOrder && (
-                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6" onClick={() => setViewingOrder(null)}>
-                    <div className="bg-white border border-gray-200 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                        <div className="p-6 md:p-10 border-b border-gray-50 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-sm z-10 rounded-t-[32px]">
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 md:p-4 lg:p-6" onClick={() => setViewingOrder(null)}>
+                    <div className="bg-white border border-gray-200 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[24px] md:rounded-[32px] shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 md:p-6 lg:p-10 border-b border-gray-50 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-sm z-10 rounded-t-[24px] md:rounded-t-[32px]">
                             <div>
                                 <div className="flex items-center gap-3">
                                     <h3 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight uppercase">Order Details</h3>
@@ -385,19 +504,19 @@ export default function OrdersPage() {
                             <button onClick={() => setViewingOrder(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:text-gray-900 transition-all text-sm font-black">✕</button>
                         </div>
 
-                        <div className="p-6 md:p-10 space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="p-4 md:p-6 lg:p-10 space-y-6 md:space-y-10">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                                 <div>
                                     <h4 className="text-gray-400 text-[10px] uppercase tracking-tight mb-3 font-bold">Customer Details</h4>
                                     <p className="text-gray-900 font-bold text-xl md:text-2xl tracking-tight">{viewingOrder.customer_name}</p>
                                     <p className="text-gray-500 text-sm md:text-base mt-1 font-medium">{viewingOrder.user_email}</p>
                                     <p className="text-gray-500 text-sm md:text-base mt-0.5 font-bold">{viewingOrder.phone_number}</p>
-                                    
+
                                     <div className="mt-6 flex gap-3">
                                         {viewingOrder.preferred_contact === 'whatsapp' && (
-                                            <a 
-                                                href={`https://wa.me/${viewingOrder.phone_number.replace(/\D/g, '')}?text=${getMessageText(viewingOrder)}`} 
-                                                target="_blank" 
+                                            <a
+                                                href={`https://wa.me/${viewingOrder.phone_number.replace(/\D/g, '')}?text=${getMessageText(viewingOrder)}`}
+                                                target="_blank"
                                                 onClick={e => e.stopPropagation()}
                                                 className="text-xs uppercase font-bold tracking-tight bg-green-500 text-white px-6 py-2.5 hover:bg-green-600 transition-all rounded-xl shadow-lg shadow-green-100"
                                             >
@@ -405,9 +524,9 @@ export default function OrdersPage() {
                                             </a>
                                         )}
                                         {viewingOrder.preferred_contact === 'telegram' && (
-                                            <a 
-                                                href={`https://t.me/+${viewingOrder.phone_number.replace(/\D/g, '')}?text=${getMessageText(viewingOrder)}`} 
-                                                target="_blank" 
+                                            <a
+                                                href={`https://t.me/+${viewingOrder.phone_number.replace(/\D/g, '')}?text=${getMessageText(viewingOrder)}`}
+                                                target="_blank"
                                                 onClick={e => e.stopPropagation()}
                                                 className="text-xs uppercase font-bold tracking-tight bg-sky-500 text-white px-6 py-2.5 hover:bg-sky-600 transition-all rounded-xl shadow-lg shadow-sky-100"
                                             >
@@ -420,24 +539,66 @@ export default function OrdersPage() {
                                     <h4 className="text-gray-400 text-[10px] uppercase tracking-tight mb-3 font-bold">Summary</h4>
                                     <div className="space-y-2.5">
                                         <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Method:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.pick_up_type}</span></p>
+                                        {viewingOrder.pickup_date && (
+                                            <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Date:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{new Date(viewingOrder.pickup_date).toLocaleDateString()}</span></p>
+                                        )}
                                         <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Contact:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.preferred_contact}</span></p>
-                                        <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Box:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.wants_box === false ? 'No' : 'Yes'}</span></p>
+                                        <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Box:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.wants_box === false ? 'No (Loose Bonbons)' : (() => {
+                                            const boxKeys = Object.entries(viewingOrder.composition || {}).filter(([k, v]) => v > 0 && k.includes('piece')).map(([k, v]) => v > 1 ? `${v}× ${k.replace('-piece', ' Piece')}` : k.replace('-piece', ' Piece'));
+                                            if (boxKeys.length > 0) return `Yes — ${boxKeys.join(', ')}`;
+                                            
+                                            // Fallback
+                                            if (viewingOrder.selected_box_size) {
+                                                const sizeLabel = viewingOrder.selected_box_size.replace('-piece', ' Piece');
+                                                const qty = viewingOrder.custom_box_quantity || 1;
+                                                return qty > 1 ? `Yes — ${qty}× ${sizeLabel}` : `Yes — ${sizeLabel}`;
+                                            }
+                                            return 'Yes';
+                                        })()}</span></p>
                                         <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Type:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.order_type === 'bestSeller' ? 'Best Seller' : viewingOrder.order_type === 'mixed' ? 'Mixed' : 'Custom'}</span></p>
-                                        
+
                                         {/* Box configuration breakdown */}
-                                        {viewingOrder.composition && (() => {
-                                            const validSizes = ['4-piece', '9-piece', '16-piece', '40-piece'];
-                                            const entries = Object.entries(viewingOrder.composition).filter(([size, count]) => count > 0 && validSizes.includes(size));
-                                            if (entries.length === 0) return null;
+                                        {(() => {
+                                            if (viewingOrder.composition) {
+                                                const validSizes = ['4-piece', '9-piece', '16-piece', '40-piece'];
+                                                const entries = Object.entries(viewingOrder.composition).filter(([size, count]) => count > 0 && validSizes.includes(size));
+                                                if (entries.length > 0) {
+                                                    const totalBoxes = entries.reduce((s, [, c]) => s + c, 0);
+                                                    return (
+                                                        <div className="border-t border-gray-200 pt-3 mt-2">
+                                                            <p className="text-gray-400 text-[10px] uppercase tracking-tight font-bold mb-2">Box Configuration ({totalBoxes} {totalBoxes === 1 ? 'box' : 'boxes'})</p>
+                                                            {entries.map(([size, count]) => (
+                                                                <p key={size} className="flex justify-between text-sm">
+                                                                    <span className="text-gray-500 font-medium">{size.replace('-', ' ').replace('piece', 'Piece')}</span>
+                                                                    <span className="text-gray-900 font-bold">×{count}</span>
+                                                                </p>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                }
+                                            }
+
+                                            // Fallback to selected_box_size
+                                            const boxSize = viewingOrder.selected_box_size;
+                                            const boxQty = viewingOrder.custom_box_quantity || 1;
+                                            const sizeLabel = boxSize ? boxSize.replace('-piece', ' Piece') : null;
+                                            if (!boxSize) return null;
+
                                             return (
                                                 <div className="border-t border-gray-200 pt-3 mt-2">
-                                                    <p className="text-gray-400 text-[10px] uppercase tracking-tight font-bold mb-2">Box Configuration</p>
-                                                    {entries.map(([size, count]) => (
-                                                        <p key={size} className="flex justify-between text-sm">
-                                                            <span className="text-gray-500 font-medium">{size.replace('-', ' ').replace('piece', 'Piece')}</span>
-                                                            <span className="text-gray-900 font-bold">×{count}</span>
-                                                        </p>
-                                                    ))}
+                                                    <p className="text-gray-400 text-[10px] uppercase tracking-tight font-bold mb-2">
+                                                        Box Configuration
+                                                    </p>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1.5 rounded-xl">
+                                                            📦 {sizeLabel}
+                                                        </span>
+                                                        {boxQty > 1 && (
+                                                            <span className="text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
+                                                                ×{boxQty} boxes
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             );
                                         })()}
@@ -451,7 +612,7 @@ export default function OrdersPage() {
 
                             <div>
                                 <h4 className="text-gray-400 text-[10px] uppercase tracking-tight mb-4 font-bold border-b border-gray-50 pb-2">Items</h4>
-                                
+
                                 {(() => {
                                     const allItems = viewingOrder.order_items || [];
                                     const customItems = allItems.filter(i => i.type !== 'bestSeller');
@@ -470,37 +631,190 @@ export default function OrdersPage() {
                                                     }
                                                 });
 
-                                                const total = allPieces.length;
-                                                let gridCols = 'grid-cols-2';
-                                                if (total <= 4) gridCols = 'grid-cols-2';
-                                                else if (total <= 9) gridCols = 'grid-cols-3';
-                                                else if (total <= 16) gridCols = 'grid-cols-4';
-                                                else gridCols = 'grid-cols-5';
+                                                // Get box info from composition to support multiple box sizes
+                                                const validSizes = ['4-piece', '9-piece', '16-piece', '40-piece'];
+                                                const boxEntries = Object.entries(viewingOrder.composition || {})
+                                                    .filter(([k, v]) => v > 0 && validSizes.includes(k));
+                                                    
+                                                let boxLabel = null;
+                                                let boxCapacity = 0;
+                                                let boxQty = 0;
 
-                                                return (
-                                                    <>
-                                                        <p className="text-gray-500 text-[10px] uppercase tracking-tight font-bold mb-2">Custom Selection</p>
-                                                        <div className={`grid ${gridCols} gap-1.5 mb-4 max-w-sm`}>
-                                                            {allPieces.map((piece, i) => (
-                                                                <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
-                                                                    {piece.img ? (
-                                                                        <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
-                                                                    )}
+                                                if (boxEntries.length > 0) {
+                                                    boxLabel = boxEntries.map(([k, v]) => v > 1 ? `${v}× ${k.replace('-piece', ' Piece')}` : `${k.replace('-piece', ' Piece')}`).join(', ');
+                                                    // This determines the capacity of the *first* box size for visual grid slicing (fallback for mixed visual grid)
+                                                    boxCapacity = parseInt(boxEntries[0][0]);
+                                                    boxQty = boxEntries.reduce((acc, [k,v]) => acc + v, 0);
+                                                } else if (viewingOrder.selected_box_size) {
+                                                    // Fallback
+                                                    boxLabel = viewingOrder.selected_box_size.replace('-piece', ' Piece');
+                                                    boxCapacity = parseInt(viewingOrder.selected_box_size);
+                                                    boxQty = viewingOrder.custom_box_quantity || 1;
+                                                }
+
+                                                if (viewingOrder.wants_box !== false) {
+                                                    // Multi-box: show Box 1, Box 2 etc.
+                                                    if (boxQty > 1 && boxCapacity > 0) {
+                                                        // Complex multi-box logic for visual grid (handles different sized boxes)
+                                                        const boxes = [];
+                                                        let offset = 0;
+                                                        
+                                                        // Expand the composition to individual boxes to slice correctly
+                                                        const boxSequence = [];
+                                                        for (const [sizeStr, count] of boxEntries) {
+                                                            const capacity = parseInt(sizeStr);
+                                                            for (let i = 0; i < count; i++) {
+                                                                boxSequence.push({ label: sizeStr.replace('-piece', ' Piece'), capacity });
+                                                            }
+                                                        }
+                                                        
+                                                        // Fallback if sequence is empty but boxQty is set
+                                                        if (boxSequence.length === 0 && boxCapacity > 0) {
+                                                            for (let i = 0; i < boxQty; i++) {
+                                                                boxSequence.push({ label: boxLabel, capacity: boxCapacity });
+                                                            }
+                                                        }
+                                                        
+                                                        for (const { label, capacity } of boxSequence) {
+                                                            boxes.push({
+                                                                pieces: allPieces.slice(offset, offset + capacity),
+                                                                capacity,
+                                                                label
+                                                            });
+                                                            offset += capacity;
+                                                        }
+                                                        const looseItems = allPieces.slice(offset);
+
+                                                        return (
+                                                            <>
+                                                                {boxes.map((boxData, boxIdx) => {
+                                                                    const boxPieces = boxData.pieces;
+                                                                    const currentBoxCapacity = boxData.capacity;
+                                                                    const currentBoxLabel = boxData.label;
+                                                                    const total = boxPieces.length;
+                                                                    let gridCols = 'grid-cols-3';
+                                                                    if (total <= 4) gridCols = 'grid-cols-2';
+                                                                    else if (total <= 9) gridCols = 'grid-cols-3';
+                                                                    else if (total <= 16) gridCols = 'grid-cols-4';
+                                                                    else gridCols = 'grid-cols-5';
+
+                                                                    return (
+                                                                        <div key={boxIdx} className="mb-4">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <p className="text-gray-500 text-[10px] uppercase tracking-tight font-bold">📦 Box {boxIdx + 1}</p>
+                                                                                <span className="text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border bg-gray-900 text-white border-gray-900">
+                                                                                    {currentBoxLabel} · {total}/{currentBoxCapacity}
+                                                                                </span>
+                                                                            </div>
+                                                                            {total > 0 ? (
+                                                                                <div className={`grid ${gridCols} gap-1.5 max-w-sm`}>
+                                                                                    {boxPieces.map((piece, i) => (
+                                                                                        <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
+                                                                                            {piece.img ? (
+                                                                                                <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                                                            ) : (
+                                                                                                <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="text-gray-300 text-xs italic">Empty box</p>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                                {looseItems.length > 0 && (
+                                                                    <div className="mb-4">
+                                                                        <p className="text-gray-500 text-[10px] uppercase tracking-tight font-bold mb-2">🍫 Loose Bonbons ({looseItems.length})</p>
+                                                                        <div className="grid grid-cols-4 gap-1.5 max-w-sm">
+                                                                            {looseItems.map((piece, i) => (
+                                                                                <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
+                                                                                    {piece.img ? (
+                                                                                        <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                                                    ) : (
+                                                                                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
+                                                                                    )}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                <div className="space-y-1 mb-4">
+                                                                    {customItems.map((item, i) => (
+                                                                        <div key={i} className="flex justify-between items-center py-2 px-3 bg-gray-50/50 rounded-xl">
+                                                                            <span className="text-gray-700 text-xs font-bold tracking-tight">{item.bonbonName}</span>
+                                                                            <span className="text-gray-900 font-bold text-sm font-mono">×{item.quantity}</span>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                        <div className="space-y-1 mb-4">
-                                                            {customItems.map((item, i) => (
-                                                                <div key={i} className="flex justify-between items-center py-2 px-3 bg-gray-50/50 rounded-xl">
-                                                                    <span className="text-gray-700 text-xs font-bold tracking-tight">{item.bonbonName}</span>
-                                                                    <span className="text-gray-900 font-bold text-sm font-mono">×{item.quantity}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                );
+                                                            </>
+                                                        );
+                                                    }
+
+                                                    // Single box
+                                                    const total = allPieces.length;
+                                                    let gridCols = 'grid-cols-2';
+                                                    if (total <= 4) gridCols = 'grid-cols-2';
+                                                    else if (total <= 9) gridCols = 'grid-cols-3';
+                                                    else if (total <= 16) gridCols = 'grid-cols-4';
+                                                    else gridCols = 'grid-cols-5';
+
+                                                    return (
+                                                        <>
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <p className="text-gray-500 text-[10px] uppercase tracking-tight font-bold">Custom Selection</p>
+                                                                {boxLabel && (
+                                                                    <span className="text-[10px] font-bold uppercase tracking-tight px-2 py-0.5 rounded-full border bg-gray-900 text-white border-gray-900">
+                                                                        📦 {boxLabel}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className={`grid ${gridCols} gap-1.5 mb-4 max-w-sm`}>
+                                                                {allPieces.map((piece, i) => (
+                                                                    <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
+                                                                        {piece.img ? (
+                                                                            <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                                        ) : (
+                                                                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <div className="space-y-1 mb-4">
+                                                                {customItems.map((item, i) => (
+                                                                    <div key={i} className="flex justify-between items-center py-2 px-3 bg-gray-50/50 rounded-xl">
+                                                                        <span className="text-gray-700 text-xs font-bold tracking-tight">{item.bonbonName}</span>
+                                                                        <span className="text-gray-900 font-bold text-sm font-mono">×{item.quantity}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <>
+                                                            <p className="text-gray-500 text-[10px] uppercase tracking-tight font-bold mb-2">Loose Bonbons</p>
+                                                            <div className="space-y-2 mb-4">
+                                                                {customItems.map((item, i) => {
+                                                                    const globalBonbon = bonbons.find(b => b.id === item.bonbonId);
+                                                                    const img = item.imageUrl || globalBonbon?.image_url;
+                                                                    return (
+                                                                        <div key={i} className="flex items-center gap-3 py-2 px-3 bg-gray-50 border border-gray-100 rounded-xl">
+                                                                            {img ? (
+                                                                                <img src={img} alt={item.bonbonName} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                                                                            ) : (
+                                                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-[10px] font-bold uppercase">{item.bonbonName?.charAt(0)}</div>
+                                                                            )}
+                                                                            <span className="text-gray-900 text-sm font-bold tracking-tight flex-1">{item.bonbonName}</span>
+                                                                            <span className="text-gray-900 font-bold text-sm font-mono">×{item.quantity}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </>
+                                                    );
+                                                }
                                             })()}
 
                                             {/* Best seller items */}
@@ -534,7 +848,7 @@ export default function OrdersPage() {
                             </div>
                         </div>
 
-                        <div className="p-6 md:p-10 border-t border-gray-50 flex justify-end sticky bottom-0 bg-white/80 backdrop-blur-sm rounded-b-[32px]">
+                        <div className="p-4 md:p-6 lg:p-10 border-t border-gray-50 flex justify-end sticky bottom-0 bg-white/80 backdrop-blur-sm rounded-b-[24px] md:rounded-b-[32px]">
                             <button
                                 onClick={() => setViewingOrder(null)}
                                 className="px-10 py-3.5 bg-gray-900 text-white text-sm font-bold uppercase tracking-tight hover:bg-gray-800 transition-all rounded-xl shadow-lg"

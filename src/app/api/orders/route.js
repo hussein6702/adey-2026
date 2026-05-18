@@ -53,7 +53,7 @@ export async function POST(req) {
     const body = await req.json();
     console.log('Order received', body);
 
-    const { customerName, pickUpType, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize } = body;
+    const { customerName, pickUpType, pickupDate, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize, customBoxQuantity = 1, customBoxes = [] } = body;
 
     if (!customerName || !pickUpType || !userEmail || !phoneNumber || !orderType) {
       return new Response(
@@ -74,7 +74,7 @@ export async function POST(req) {
     if (items && Array.isArray(items) && items.length > 0) {
       const totalPieces = items.reduce((sum, item) => sum + item.quantity, 0);
 
-      if (totalPieces > 40) {
+      if (totalPieces > 40 && orderSource !== 'walk-in') {
         return new Response(
           JSON.stringify({ success: false, error: "Maximum 40 bonbons per custom order" }),
           { status: 400 }
@@ -88,10 +88,30 @@ export async function POST(req) {
         imageUrl: item.imageUrl
       }));
 
-      if (wantsBox && selectedBoxSize && boxPrices[selectedBoxSize]) {
-        // Box selected: use the fixed box price
-        amount += boxPrices[selectedBoxSize];
-        boxes[selectedBoxSize] = (boxes[selectedBoxSize] || 0) + 1;
+      if (wantsBox && customBoxes.length > 0) {
+        // Boxes selected: sum up prices for each box
+        let totalBoxCapacity = 0;
+        for (const boxSize of customBoxes) {
+            amount += boxPrices[boxSize] || 0;
+            boxes[boxSize] = (boxes[boxSize] || 0) + 1;
+            totalBoxCapacity += parseInt(boxSize) || 0;
+        }
+        
+        // Calculate loose bonbons if any
+        if (totalPieces > totalBoxCapacity) {
+          let piecesCounted = 0;
+          enrichedItems.forEach(item => {
+            const b = bonbons?.find(x => x.id === item.bonbonId);
+            if (b) {
+                for (let i = 0; i < item.quantity; i++) {
+                    piecesCounted++;
+                    if (piecesCounted > totalBoxCapacity) {
+                        amount += b.price;
+                    }
+                }
+            }
+          });
+        }
       } else if (wantsBox) {
         // Box but no specific size: pack into boxes
         const packed = packIntoBoxes(totalPieces);
@@ -182,6 +202,9 @@ export async function POST(req) {
       status: 'received',
       wants_box: wantsBox !== undefined ? wantsBox : true,
       order_source: orderSource || 'online',
+      pickup_date: pickupDate || null,
+      selected_box_size: selectedBoxSize || null,
+      custom_box_quantity: customBoxQuantity || 1,
     }]);
 
     if (error) {

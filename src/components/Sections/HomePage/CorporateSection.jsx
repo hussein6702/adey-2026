@@ -51,10 +51,9 @@ export default function CorporateSection() {
                     Corporate Gifting
                 </Headings>
                 <BodyText className="corporate-copy text-left lg:text-xl">
-                    Whether you’re thanking a client or celebrating a milestone, our curated chocolate gifts speak volumes.<br /><br />
 
                     Whether you’re gifting for clients, executives, or events, we offer beautiful, customisable chocolate gifts that convey refined taste, gratitude, and brand warmth.
-                    We offer custom branding options upon request.
+
                 </BodyText>
                 <div className="corporate-links">
                     <Links>

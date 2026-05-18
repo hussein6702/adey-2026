@@ -19,7 +19,7 @@ export default function Home() {
             Crafted for the <span className="italic">World</span>
           </>
         }
-        subtitle="Handcrafted in Addis Ababa, our creations blend refined European techniques with ingredients from across our rich continent. Each piece is a celebration of heritage, artistry, and the promise of tomorrow."
+        subtitle="Handcrafted in Addis Ababa, our creations blend refined techniques with ingredients from across our rich continent. Each piece is a celebration of heritage, artistry, and the promise of tomorrow."
         dark
       />
 

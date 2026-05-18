@@ -50,7 +50,7 @@ export default function WalkInsPage() {
 
     // Derive max pieces
     const boxSizeObj = BOX_SIZES.find(b => b.key === selectedBoxSize);
-    const MAX_PIECES = wantsBox && boxSizeObj ? boxSizeObj.pieces : 40;
+    const MAX_PIECES = wantsBox && boxSizeObj ? boxSizeObj.pieces : Infinity;
 
     const totalPieces = Object.values(cart).reduce((s, v) => s + v, 0);
 
@@ -120,6 +120,8 @@ export default function WalkInsPage() {
                 orderType: 'custom',
                 items,
                 wantsBox,
+                selectedBoxSize: wantsBox ? selectedBoxSize : null,
+                customBoxQuantity: 1,
                 orderSource: 'walk-in',
             }),
         });
@@ -209,15 +211,17 @@ export default function WalkInsPage() {
                     {totalPieces > 0 && (
                         <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 mb-6">
                             <div className="flex items-center justify-between text-xs font-bold uppercase tracking-tight mb-2">
-                                <span className="text-gray-500">{totalPieces}/{MAX_PIECES} pieces</span>
+                                <span className="text-gray-500">{totalPieces}/{MAX_PIECES === Infinity ? '∞' : MAX_PIECES} pieces</span>
                                 {totalPieces >= MAX_PIECES && <span className="text-red-500">Full</span>}
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div 
-                                    className={`h-2 rounded-full transition-all ${totalPieces >= MAX_PIECES ? 'bg-red-500' : 'bg-gray-900'}`}
-                                    style={{ width: `${Math.min(100, (totalPieces / MAX_PIECES) * 100)}%` }}
-                                />
-                            </div>
+                            {MAX_PIECES !== Infinity && (
+                                <div className="w-full bg-gray-100 rounded-full h-2">
+                                    <div 
+                                        className={`h-2 rounded-full transition-all ${totalPieces >= MAX_PIECES ? 'bg-red-500' : 'bg-gray-900'}`}
+                                        style={{ width: `${Math.min(100, (totalPieces / MAX_PIECES) * 100)}%` }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -245,7 +249,7 @@ export default function WalkInsPage() {
                     </div>
 
                     {/* Bonbon grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
                         {bonbons
                             .filter(b => activeCategory === 'all' || b.category === activeCategory)
                             .map(b => {
@@ -255,9 +259,9 @@ export default function WalkInsPage() {
                                 return (
                                     <div
                                         key={b.id}
-                                        className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-all ${inCart > 0 ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-100'} ${outOfStock ? 'opacity-40' : ''}`}
+                                        className={`bg-white border rounded-xl md:rounded-2xl shadow-sm overflow-hidden transition-all ${inCart > 0 ? 'border-gray-900 ring-1 ring-gray-900' : 'border-gray-100'} ${outOfStock ? 'opacity-40' : ''}`}
                                     >
-                                        <div className="relative aspect-square bg-gray-50">
+                                        <div className="relative aspect-[4/3] md:aspect-square bg-gray-50">
                                             {b.image_url ? (
                                                 <img src={b.image_url} alt={b.name} className="w-full h-full object-contain" loading="lazy" />
                                             ) : (
@@ -269,9 +273,9 @@ export default function WalkInsPage() {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="p-3">
-                                            <p className="text-gray-900 text-xs font-bold tracking-tight truncate">{b.name}</p>
-                                            <p className="text-gray-400 text-[10px] font-bold font-mono">{b.price} ETB</p>
+                                        <div className="p-2 md:p-3">
+                                            <p className="text-gray-900 text-[10px] md:text-xs font-bold tracking-tight truncate">{b.name}</p>
+                                            <p className="text-gray-400 text-[9px] md:text-[10px] font-bold font-mono">{b.price} ETB</p>
                                             <div className="mt-2 flex gap-1">
                                                 {outOfStock ? (
                                                     <span className="text-[10px] text-red-400 uppercase font-bold">Sold out</span>

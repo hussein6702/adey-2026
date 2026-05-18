@@ -41,7 +41,7 @@ export default function VerticalSection() {
                     Handcrafted Excellence.
                 </Headings>
                 <BodyText className="vertical-copy text-left lg:text-xl">
-                    Every Bonbon we produce is a culinary masterpiece. Handcrafted using world-class ingredients, our chocolates are a means to express what we stand for: slow food, craft and attention to the finest of details.
+                    Every Bonbon we produce is handcrafted using world-class ingredients. Our chocolates are a means to express what we stand for: slow food, craft and attention to the finest of details.
                 </BodyText>
                 <div className="vertical-links">
                     <Links>

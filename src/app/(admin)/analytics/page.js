@@ -15,8 +15,8 @@ export default function AnalyticsPage() {
     };
 
     const [dateRange, setDateRange] = useState({
-        start: getLocalDateString(new Date(new Date().setDate(new Date().getDate() - 30))),
-        end: getLocalDateString(),
+        start: '',
+        end: '',
     });
 
     useEffect(() => {
@@ -38,10 +38,17 @@ export default function AnalyticsPage() {
     };
 
     const filteredOrders = useMemo(() => {
-        return orders.filter(o => {
-            const d = toLocalDateString(o.created_at);
-            return d >= dateRange.start && d <= dateRange.end;
-        });
+        let list = orders;
+        if (dateRange.start && dateRange.end) {
+            list = orders.filter(o => {
+                const d = toLocalDateString(o.created_at);
+                return d >= dateRange.start && d <= dateRange.end;
+            });
+        }
+        if (!dateRange.start && !dateRange.end) {
+            return list.slice(0, 10);
+        }
+        return list;
     }, [orders, dateRange]);
 
     const stats = useMemo(() => {

@@ -71,7 +71,7 @@ export default function AboutPage() {
                 </div>
                 <MainHeadings className="about-heading">Our Story</MainHeadings>
                 <BodyText className="about-copy">
-                    Crafted with intention, rooted in place. One bonbon at a time.
+                    Crafted with intention, rooted in place.
                 </BodyText>
                 <div className="about-links">
                     <Links>
@@ -101,7 +101,14 @@ export default function AboutPage() {
                         techniques, the rich tapestry of African cultures, and a passion for
                         creating beauty by bridging the two.
                         <br /><br />
-                        At Chocolatier Adey, each piece is an embodiment of the resilience,
+
+                        Inspired by a new generation of chefs, artists, designers, and entrepreneurs across Ethiopia,
+                        Africa & the diaspora, our story is fuelled by the belief that heritage, when met with innovation,
+                        can create something timeless.
+                        <br /><br />
+
+
+                        At Chocolatier Adey, our work is an embodiment of the resilience,
                         creativity &amp; ambition of the African Renaissance — a celebration of
                         what has been, what is, and what is yet to come.
                     </BodyText>
@@ -137,8 +144,10 @@ export default function AboutPage() {
                         Our name, Adey, honours the flower that marks the Ethiopian New Year,
                         symbolising the renewal and resurgence of African craftsmanship on the
                         global stage. Reflecting the budding promise of Ethiopia &amp; Africa
-                        blossoming into a beacon of excellence, this is chocolate with a
-                        point of view — rooted in place, crafted for the world.
+                        blossoming into a beacon of excellence, this is chocolate
+                        rooted in place, crafted for the world. <br /> <br />
+
+                        Simultaneously, Adey means ‘mother’ in the Tigrinya language, and pays homage to the mother of one of the founders, who was the inspiration and original source of the idea to develop a chocolate brand.
                     </BodyText>
                 </div>
             </section>
@@ -158,7 +167,7 @@ export default function AboutPage() {
                         triumphs. It is a quiet homage to Ethiopia and Africa as a whole.
                     </BodyText>
                 </div>
-                <div className="logo-image w-full h-1/2 lg:h-full lg:w-1/2 lg:min-w-1/2 lg:flex p-10 lg:items-center lg:justify-center">
+                <div className="logo-image w-full h-1/2 lg:h-full lg:w-1/2 lg:min-w-1/2 lg:flex p-10 lg:items-center justify-center items-center lg:justify-center">
                     <Link href="/" className="inline-block">
                         <Image
                             src="/brownLogo.svg"
