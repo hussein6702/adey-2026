@@ -29,6 +29,7 @@ export default function Footer() {
                         {[
                             { href: '/', label: 'Home' },
                             { href: '/shop', label: 'Shop' },
+                            { href: '/status', label: 'Track Order' },
                             { href: '/about', label: 'About' },
                             { href: '/corporate', label: 'Corporate' },
                             { href: '/contact', label: 'Contact' },

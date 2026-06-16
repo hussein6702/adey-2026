@@ -33,7 +33,7 @@ function BonbonCard({ bonbon, inCart, outOfStock, lowStock, atStockLimit, totalP
                         height={180}
                         className="bonbon-image"
                         loading="lazy"
-                        unoptimized
+                        quality={75}
                     />
                 ) : (
                     <div className="bonbon-image-placeholder">No Image</div>
@@ -541,14 +541,24 @@ export default function ShopPage() {
                         <div className="shop-success-items">
                             {successItems.map((item, i) => (
                                 <div key={i} className="success-item">
-                                    {item.imageUrl && <img src={item.imageUrl} alt={item.bonbonName} />}
+                                    {item.imageUrl && <img src={item.imageUrl} alt={item.bonbonName} loading="lazy" />}
                                     <span className="success-item-qty">{item.quantity}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                     <p className="shop-success-amount">{orderSuccess.amount} ETB</p>
-                    <button onClick={() => { setOrderSuccess(null); setWantsBox(false); setCustomBoxes([]); }} className="shop-btn-primary">Continue Shopping</button>
+                    {orderSuccess.order_code && (
+                        <div style={{marginTop: '1rem', padding: '1rem', background: '#f8f5f0', borderRadius: '12px', border: '1px dashed #d1c7ba'}}>
+                            <p style={{fontSize: '0.7rem', color: '#9a8b78', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem'}}>Order Code</p>
+                            <p style={{fontSize: '1.5rem', fontWeight: 800, letterSpacing: '0.1em', color: '#2c241a'}}>{orderSuccess.order_code}</p>
+                            <p style={{fontSize: '0.65rem', color: '#9a8b78', marginTop: '0.5rem'}}>Save this code to track your order status.</p>
+                        </div>
+                    )}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.5rem', width: '100%'}}>
+                        <button onClick={() => { setOrderSuccess(null); setWantsBox(false); setCustomBoxes([]); }} className="shop-btn-primary">Continue Shopping</button>
+                        <a href="/status" style={{fontSize: '0.75rem', color: '#9a8b78', textDecoration: 'underline', fontWeight: 600}}>Track Order Status</a>
+                    </div>
                 </div>
             </div>
         );
@@ -720,7 +730,7 @@ export default function ShopPage() {
                                 <div className="shop-section-header flex flex-col items-center text-center">
                                     {catObj.image_url && (
                                         <div className="mb-6 w-32 h-32 rounded-full overflow-hidden border-2 border-[#eae5dd] shadow-sm">
-                                            <img src={catObj.image_url} alt={cat} className="w-full h-full object-cover" />
+                                            <img src={catObj.image_url} alt={cat} className="w-full h-full object-cover" loading="lazy" />
                                         </div>
                                     )}
                                     <h2>{categoryLabels[cat] || cat}</h2>

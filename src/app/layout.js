@@ -44,7 +44,7 @@ const inter = Inter({
 
 export const metadata = {
   title: "Chocolatier Adey",
-  description: "Experience the art of artisanal chocolate",
+  description: "Artisanal Chocolates Handcrafted in Ethiopia",
   icons: {
     icon: "/brownLogo.svg",
     apple: "/brownLogo.svg",

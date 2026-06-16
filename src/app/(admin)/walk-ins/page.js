@@ -335,7 +335,7 @@ export default function WalkInsPage() {
                                         <div key={bonbon.id} className="flex items-center justify-between py-2 border-b border-gray-50">
                                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 {bonbon.image_url && (
-                                                    <img src={bonbon.image_url} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                                                    <img src={bonbon.image_url} alt="" className="w-8 h-8 rounded-lg object-cover" loading="lazy" />
                                                 )}
                                                 <div className="min-w-0">
                                                     <p className="text-gray-900 text-xs font-bold truncate">{bonbon.name}</p>

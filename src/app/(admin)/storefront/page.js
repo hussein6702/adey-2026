@@ -84,7 +84,7 @@ function EditBonbonModal({ bonbon, isNew, onClose, onSave, categories, allergens
                     <div>
                         <label className="text-gray-400 text-[10px] uppercase tracking-tight block mb-3 font-bold">Visual</label>
                         {localBonbon.image_url && (
-                            <img src={localBonbon.image_url} alt="" className="w-24 h-24 rounded-2xl object-cover mb-4 shadow-md border border-gray-50" />
+                            <img src={localBonbon.image_url} alt="" className="w-24 h-24 rounded-2xl object-cover mb-4 shadow-md border border-gray-50" loading="lazy" />
                         )}
                         <input
                             type="file"

@@ -101,6 +101,7 @@ export default function Navbar() {
                             {[
                                 { href: '/', label: 'Home' },
                                 { href: '/shop', label: 'Shop' },
+                                { href: '/status', label: 'Track Order' },
                                 { href: '/about', label: 'About' },
                                 { href: '/corporate', label: 'Gifting' },
                                 { href: '/contact', label: 'Contact' },

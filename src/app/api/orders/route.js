@@ -19,6 +19,15 @@ async function getBoxPrices() {
   return prices;
 }
 
+function generateOrderCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude similar looking chars
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 function packIntoBoxes(totalPieces) {
   const boxes = { '40-piece': 0, '16-piece': 0, '9-piece': 0, '4-piece': 0, 'free-choice': 0 };
   let remaining = totalPieces;
@@ -53,6 +62,7 @@ export async function POST(req) {
     const body = await req.json();
     console.log('Order received', body);
 
+    const orderCode = generateOrderCode();
     const { customerName, pickUpType, pickupDate, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize, customBoxQuantity = 1, customBoxes = [] } = body;
 
     if (!customerName || !pickUpType || !userEmail || !phoneNumber || !orderType) {
@@ -205,11 +215,30 @@ export async function POST(req) {
       pickup_date: pickupDate || null,
       selected_box_size: selectedBoxSize || null,
       custom_box_quantity: customBoxQuantity || 1,
-    }]);
+      order_code: orderCode,
+    }]).select();
 
     if (error) {
       console.error('Supabase insert error', error);
       return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
+    }
+
+    // --- Send Telegram Notification ---
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      const telegramMessage = `${customerName} placed an order. Please check adeychocolatier.com/login to view the order. Their phone number is ${phoneNumber}.`;
+      
+      try {
+        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: telegramMessage
+          })
+        });
+      } catch (telegramErr) {
+        console.error('Failed to send telegram notification:', telegramErr);
+      }
     }
 
     // Decrement stock for custom orders
@@ -231,7 +260,7 @@ export async function POST(req) {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, order: { boxes, amount, orderType } }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, order: { id: data?.[0]?.id, order_code: orderCode, boxes, amount, orderType } }), { status: 200 });
 
   } catch (err) {
     console.error(err);

@@ -193,12 +193,19 @@ export default function OrdersPage() {
         const isMixed = order.order_type === 'mixed';
         let typeStr = isBestSeller ? 'Best Seller' : isMixed ? 'Mixed' : 'Custom';
 
+        // Best seller orders should always show as Best Seller
+        if (isBestSeller) {
+            const boxes = Object.entries(order.composition || {})
+                .filter(([k, v]) => v > 0 && k.includes('piece'))
+                .map(([k, v]) => v > 1 ? `${v}× ${k.replace('-piece', ' Pc')}` : k.replace('-piece', ' Pc'));
+            
+            if (boxes.length > 0) return `Best Seller (${boxes.join(', ')})`;
+            return 'Best Seller Box';
+        }
+
         // If no box and only custom bonbons → "Loose Bonbons"
         if (order.wants_box === false) {
-            const allItems = order.order_items || [];
-            const hasOnlyBonbons = allItems.every(i => i.type !== 'bestSeller');
-            if (hasOnlyBonbons && allItems.length > 0) return 'Loose Bonbons';
-            return `${typeStr} (No Box)`;
+            return 'Loose Bonbons';
         }
 
         // Parse composition to show accurate mixed boxes
@@ -216,8 +223,6 @@ export default function OrdersPage() {
             if (qty > 1) return `${typeStr} (${qty}× ${sizeLabel})`;
             return `${typeStr} (${sizeLabel})`;
         }
-
-        if (boxes.length > 0) return `${typeStr} (${boxes.join(', ')})`;
 
         return `${typeStr} Box`;
     }
@@ -439,6 +444,7 @@ export default function OrdersPage() {
                                                     src={itemImage}
                                                     alt=""
                                                     className="w-8 h-8 rounded-full object-cover border-2 border-white -ml-2 shadow-sm"
+                                                    loading="lazy"
                                                 />
                                             ) : (
                                                 <div key={i} className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white -ml-2 shadow-sm" />
@@ -711,7 +717,7 @@ export default function OrdersPage() {
                                                                                     {boxPieces.map((piece, i) => (
                                                                                         <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
                                                                                             {piece.img ? (
-                                                                                                <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                                                                <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
                                                                                             ) : (
                                                                                                 <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
                                                                                             )}
@@ -731,7 +737,7 @@ export default function OrdersPage() {
                                                                             {looseItems.map((piece, i) => (
                                                                                 <div key={i} className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 group">
                                                                                     {piece.img ? (
-                                                                                        <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                                                        <img src={piece.img} alt={piece.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
                                                                                     ) : (
                                                                                         <div className="w-full h-full flex items-center justify-center text-gray-300 text-[8px] font-bold uppercase">{piece.name?.charAt(0)}</div>
                                                                                     )}
@@ -802,7 +808,7 @@ export default function OrdersPage() {
                                                                     return (
                                                                         <div key={i} className="flex items-center gap-3 py-2 px-3 bg-gray-50 border border-gray-100 rounded-xl">
                                                                             {img ? (
-                                                                                <img src={img} alt={item.bonbonName} className="w-8 h-8 rounded-full object-cover shadow-sm" />
+                                                                                <img src={img} alt={item.bonbonName} className="w-8 h-8 rounded-full object-cover shadow-sm" loading="lazy" />
                                                                             ) : (
                                                                                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-[10px] font-bold uppercase">{item.bonbonName?.charAt(0)}</div>
                                                                             )}
