@@ -63,7 +63,7 @@ export async function POST(req) {
     console.log('Order received', body);
 
     const orderCode = generateOrderCode();
-    const { customerName, pickUpType, pickupDate, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize, customBoxQuantity = 1, customBoxes = [] } = body;
+    const { customerName, pickUpType, pickupDate, pickupTime, userEmail, phoneNumber, orderType, preferredContact, wantsBox, orderSource, selectedBoxSize, customBoxQuantity = 1, customBoxes = [] } = body;
 
     if (!customerName || !pickUpType || !userEmail || !phoneNumber || !orderType) {
       return new Response(
@@ -199,7 +199,7 @@ export async function POST(req) {
     console.log("boxes:", boxes, "amount:", amount, "orderType:", orderType, "wantsBox:", wantsBox);
 
     // Insert into Supabase
-    const { data, error } = await supabase.from('orders').insert([{
+    const payload = {
       customer_name: customerName,
       user_email: userEmail,
       phone_number: phoneNumber,
@@ -213,10 +213,24 @@ export async function POST(req) {
       wants_box: wantsBox !== undefined ? wantsBox : true,
       order_source: orderSource || 'online',
       pickup_date: pickupDate || null,
+      pickup_time: pickupTime || 'morning',
       selected_box_size: selectedBoxSize || null,
       custom_box_quantity: customBoxQuantity || 1,
       order_code: orderCode,
-    }]).select();
+    };
+
+    let { data, error } = await supabase.from('orders').insert([payload]).select();
+
+    // Fallback: If insertion fails because order_code or pickup_time column does not exist in the database yet
+    if (error && (error.message.includes('order_code') || error.message.includes('pickup_time') || error.message.includes('schema cache'))) {
+      console.warn('Supabase DB missing column(s). Retrying order insertion without them...');
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.order_code;
+      delete fallbackPayload.pickup_time;
+      const fallbackResult = await supabase.from('orders').insert([fallbackPayload]).select();
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       console.error('Supabase insert error', error);
@@ -260,7 +274,7 @@ export async function POST(req) {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, order: { id: data?.[0]?.id, order_code: orderCode, boxes, amount, orderType } }), { status: 200 });
+    return new Response(JSON.stringify({ success: true, order: { id: data?.[0]?.id, order_code: data?.[0]?.order_code || null, boxes, amount, orderType } }), { status: 200 });
 
   } catch (err) {
     console.error(err);

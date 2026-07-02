@@ -142,14 +142,35 @@ function OrderFormFields({ onSubmit, submitLabel, disabled, orderForm, setOrderF
                     className="shop-input"
                 />
             </div>
-            <input
-                type="date"
-                placeholder="Pickup/Delivery Date"
-                required
-                value={orderForm.pickupDate}
-                onChange={e => setOrderForm(prev => ({ ...prev, pickupDate: e.target.value }))}
-                className="shop-input"
-            />
+            <div className="shop-date-field">
+                <p className="shop-toggle-label">Intended Pick Up Date</p>
+                <input
+                    type="date"
+                    required
+                    value={orderForm.pickupDate}
+                    onChange={e => setOrderForm(prev => ({ ...prev, pickupDate: e.target.value }))}
+                    className="shop-input"
+                />
+            </div>
+            <div className="shop-contact-toggle">
+                <p className="shop-toggle-label">Pick Up Time</p>
+                <div className="shop-toggle-options">
+                    <button
+                        type="button"
+                        className={`shop-toggle-btn ${orderForm.pickupTime === 'morning' ? 'active' : ''}`}
+                        onClick={() => setOrderForm(prev => ({ ...prev, pickupTime: 'morning' }))}
+                    >
+                        ☀️ Morning
+                    </button>
+                    <button
+                        type="button"
+                        className={`shop-toggle-btn ${orderForm.pickupTime === 'afternoon' ? 'active' : ''}`}
+                        onClick={() => setOrderForm(prev => ({ ...prev, pickupTime: 'afternoon' }))}
+                    >
+                        🌤 Afternoon
+                    </button>
+                </div>
+            </div>
             <div className="shop-contact-toggle">
                 <p className="shop-toggle-label">Preferred Contact:</p>
                 <div className="shop-toggle-options">
@@ -214,6 +235,7 @@ export default function ShopPage() {
         countryCode: '+251',
         pickUpType: 'pickup',
         pickupDate: '',
+        pickupTime: 'morning',
         preferredContact: 'whatsapp',
     });
     const [submitting, setSubmitting] = useState(false);
@@ -444,6 +466,7 @@ export default function ShopPage() {
                 customBoxQuantity: wantsBox ? customBoxes.length : 1,
                 customBoxes: wantsBox ? customBoxes.map(b => b.size) : [],
                 orderSource: 'online',
+                pickupTime: orderForm.pickupTime || 'morning',
             }),
         });
 
@@ -454,7 +477,7 @@ export default function ShopPage() {
             setOrderSuccess(data.order);
             clearAll();
             setCartOpen(false);
-            setOrderForm({ customerName: '', userEmail: '', phoneNumber: '', countryCode: '+251', pickUpType: 'pickup', pickupDate: '', preferredContact: 'whatsapp' });
+            setOrderForm({ customerName: '', userEmail: '', phoneNumber: '', countryCode: '+251', pickUpType: 'pickup', pickupDate: '', pickupTime: 'morning', preferredContact: 'whatsapp' });
             fetchData();
         } else {
             setOrderError(data.error);

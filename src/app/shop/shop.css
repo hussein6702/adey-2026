@@ -826,6 +826,10 @@
     margin: 1.5rem 0 0.5rem;
 }
 
+.shop-date-field {
+    margin: 1.5rem 0 0;
+}
+
 .shop-toggle-label {
     font-size: 0.65rem;
     color: #b0a595;

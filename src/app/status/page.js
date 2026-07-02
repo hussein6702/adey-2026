@@ -28,12 +28,24 @@ export default function StatusPage() {
 
         try {
             // Search by code or phone number
-            const { data, error: supabaseError } = await supabase
+            let { data, error: supabaseError } = await supabase
                 .from('orders')
                 .select('*')
                 .or(`order_code.eq.${query.toUpperCase()},phone_number.ilike.%${query}%`)
                 .order('created_at', { ascending: false })
                 .limit(1);
+
+            // Fallback: If search fails because order_code column does not exist in the database yet
+            if (supabaseError && (supabaseError.message.includes('order_code') || supabaseError.message.includes('schema cache'))) {
+                const fallbackRes = await supabase
+                    .from('orders')
+                    .select('*')
+                    .ilike('phone_number', `%${query}%`)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                data = fallbackRes.data;
+                supabaseError = fallbackRes.error;
+            }
 
             if (supabaseError) throw supabaseError;
 

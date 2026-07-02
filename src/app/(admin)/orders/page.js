@@ -548,6 +548,14 @@ export default function OrdersPage() {
                                         {viewingOrder.pickup_date && (
                                             <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Date:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{new Date(viewingOrder.pickup_date).toLocaleDateString()}</span></p>
                                         )}
+                                        {viewingOrder.pickup_time && (
+                                            <p className="flex justify-between text-base">
+                                                <span className="text-gray-400 font-bold">Pick Up Time:</span>
+                                                <span className={`text-xs font-bold uppercase tracking-tight px-2.5 py-1 rounded-full border ${viewingOrder.pickup_time === 'morning' ? 'text-amber-600 bg-amber-50 border-amber-100' : 'text-sky-600 bg-sky-50 border-sky-100'}`}>
+                                                    {viewingOrder.pickup_time === 'morning' ? '☀️ Morning' : '🌤 Afternoon'}
+                                                </span>
+                                            </p>
+                                        )}
                                         <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Contact:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.preferred_contact}</span></p>
                                         <p className="flex justify-between text-base"><span className="text-gray-400 font-bold">Box:</span> <span className="text-gray-900 font-bold uppercase tracking-tight text-sm">{viewingOrder.wants_box === false ? 'No (Loose Bonbons)' : (() => {
                                             const boxKeys = Object.entries(viewingOrder.composition || {}).filter(([k, v]) => v > 0 && k.includes('piece')).map(([k, v]) => v > 1 ? `${v}× ${k.replace('-piece', ' Piece')}` : k.replace('-piece', ' Piece'));
